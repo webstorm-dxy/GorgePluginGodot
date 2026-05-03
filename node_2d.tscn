@@ -1,0 +1,9 @@
+[gd_scene format=3 uid="uid://n50amp03fjrw"]
+
+[ext_resource type="Script" uid="uid://cru3yw4mcjypj" path="res://addons/gorgeplugin/GamePlayer.cs" id="1_wtcfe"]
+
+[node name="Node2D" type="Node2D" unique_id=1393146546]
+
+[node name="GamePlayer" type="Node" parent="." unique_id=418803319]
+script = ExtResource("1_wtcfe")
+metadata/_custom_type_script = "uid://cru3yw4mcjypj"

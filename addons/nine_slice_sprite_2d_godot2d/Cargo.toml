@@ -1,0 +1,11 @@
+[package]
+name = "nine_slice_sprite_2d"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+godot = "0.4.5"

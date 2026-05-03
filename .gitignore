@@ -1,0 +1,4 @@
+# Godot 4+ specific ignores
+.godot/
+/android/
+addons/nine_slice_sprite_2d_godot2d/target

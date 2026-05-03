@@ -1,0 +1,665 @@
+// Unreachable code detected
+#pragma warning disable 0162
+// The variable '...' is assigned but its value is never used
+#pragma warning disable 0219
+// Missing XML comment for publicly visible type or member '...'
+#pragma warning disable 1591
+// Ambiguous reference in cref attribute
+#pragma warning disable 419
+#pragma warning disable 0105
+#pragma warning disable 0109
+
+// ReSharper disable InconsistentNaming
+// ReSharper disable NotAccessedVariable
+// ReSharper disable ArrangeObjectCreationWhenTypeEvident
+// ReSharper disable RedundantEmptyObjectOrCollectionInitializer
+// ReSharper disable RedundantAssignment
+// ReSharper disable MergeCastWithTypeCheck
+// ReSharper disable RedundantIfElseBlock
+// ReSharper disable HeuristicUnreachableCode
+// ReSharper disable ReplaceAutoPropertyWithComputedProperty
+// ReSharper disable MemberCanBePrivate.Global
+// ReSharper disable RedundantUsingDirective
+// ReSharper disable RedundantExplicitArrayCreation
+// ReSharper disable ConvertIfStatementToConditionalTernaryExpression
+// ReSharper disable MemberCanBeProtected.Global
+// ReSharper disable MemberHidesStaticFromOuterClass
+using System;
+using System.Collections.Generic;
+using Gorge.GorgeLanguage.Objective;
+using Gorge.GorgeLanguage.Objective.Attributes;
+using Gorge.GorgeLanguage.VirtualMachine;
+using Gorge.Native.GorgeFramework;
+using Gorge.Native.GorgeFramework;
+using Gorge.Native.Gorge;
+namespace Gorge.Native.GorgeFramework
+{
+public partial class InputSignalFilter : global::Gorge.Native.GorgeFramework.SignalFilter
+{
+public new class Implementation : GorgeClass
+{
+public static GorgeType Type() => GorgeType.Object("InputSignalFilter", "GorgeFramework", new GorgeType[]{});
+public override GorgeClass SuperClass { get; } = global::Gorge.Native.GorgeFramework.SignalFilter.Class;
+public override GorgeClass LatestNativeClass => this;
+public override Injector EmptyInjector() => new SpecificInjector();
+public override ClassDeclaration Declaration { get; } = new ClassDeclaration(
+type: Type(),
+isNative: true,
+superClass: global::Gorge.Native.GorgeFramework.SignalFilter.Class.Declaration,
+superInterfaces: new GorgeInterface[]
+{
+},
+fields: new FieldInformation[]
+{
+new FieldInformation(
+id: 6,
+name: "touchArea",
+type: GorgeType.Delegate(GorgeType.Bool,global::Gorge.Native.GorgeFramework.TouchSignal.Implementation.Type()),
+annotations: new Annotation[]{},
+index: 3
+),
+},
+methods:
+new MethodInformation[]
+{
+new MethodInformation(
+id: 2,
+name: "CanDetect",
+returnType: GorgeType.Bool,
+parameters: new ParameterInformation[]
+{
+new ParameterInformation(
+id: 0,
+name: "channelName",
+type: GorgeType.String,
+index: 0
+),
+},
+annotations: new Annotation[]{}
+),
+new MethodInformation(
+id: 3,
+name: "Detect",
+returnType: GorgeType.Bool,
+parameters: new ParameterInformation[]
+{
+new ParameterInformation(
+id: 0,
+name: "channelName",
+type: GorgeType.String,
+index: 0
+),
+new ParameterInformation(
+id: 1,
+name: "signalId",
+type: GorgeType.Int,
+index: 0
+),
+new ParameterInformation(
+id: 2,
+name: "conditionType",
+type: GorgeType.Int,
+index: 1
+),
+new ParameterInformation(
+id: 3,
+name: "signalValue",
+type: global::Gorge.Native.GorgeFramework.ISignal.Interface.Type,
+index: 0
+),
+new ParameterInformation(
+id: 4,
+name: "lastSignalValue",
+type: global::Gorge.Native.GorgeFramework.ISignal.Interface.Type,
+index: 1
+),
+},
+annotations: new Annotation[]{}
+),
+}
+,
+staticMethods:
+new MethodInformation[]
+{
+}
+,
+constructors:
+new ConstructorInformation[]
+{
+new ConstructorInformation(
+id: 1,
+parameters: new ParameterInformation[]
+{
+new ParameterInformation(
+id: 0,
+name: "priority",
+type: GorgeType.Delegate(global::Gorge.Native.Gorge.ObjectArray.Implementation.Type()),
+index: 0
+),
+new ParameterInformation(
+id: 1,
+name: "touchType",
+type: global::Gorge.Native.Gorge.IntArray.Implementation.Type(),
+index: 1
+),
+new ParameterInformation(
+id: 2,
+name: "touchArea",
+type: GorgeType.Delegate(GorgeType.Bool,global::Gorge.Native.GorgeFramework.TouchSignal.Implementation.Type()),
+index: 2
+),
+new ParameterInformation(
+id: 3,
+name: "endTime",
+type: GorgeType.Delegate(GorgeType.Float),
+index: 3
+),
+new ParameterInformation(
+id: 4,
+name: "timeMode",
+type: global::Gorge.Native.GorgeFramework.TimeMode.Enum.Type,
+index: 0
+),
+new ParameterInformation(
+id: 5,
+name: "acceptConsume",
+type: GorgeType.Bool,
+index: 0
+),
+new ParameterInformation(
+id: 6,
+name: "denyConsume",
+type: GorgeType.Bool,
+index: 1
+),
+},
+annotations: new Annotation[]{}
+),
+}
+,
+injectorConstructors:
+new ConstructorInformation[]
+{
+}
+,
+injectorFields: new InjectorFieldInformation[]
+{
+},
+annotations: global::Gorge.Native.GorgeFramework.InputSignalFilter.ClassAnnotations(),
+fieldIndexCount:
+new TypeCount(
+intCount: 1,
+floatCount: 0,
+boolCount: 2,
+stringCount: 0,
+objectCount: 4
+)
+,
+methodCount: 4,
+methodOverrideId:
+new Dictionary<int, int>()
+{
+{ 0, 2 },
+{ 1, 3 },
+}
+,
+interfaceMethodImplementationId:
+new Dictionary<string, int[]>()
+{
+}
+,
+staticMethodCount: 0,
+constructorCount: 2,
+injectorConstructorCount: 0,
+injectorConstructorImplementationId:
+new int[]
+{
+}
+,
+injectorFieldIndexCount:
+new TypeCount(
+intCount: 0,
+floatCount: 0,
+boolCount: 0,
+stringCount: 0,
+objectCount: 0
+)
+,
+injectorFieldDefaultValueIndexCount:
+new TypeCount(
+intCount: 0,
+floatCount: 0,
+boolCount: 0,
+stringCount: 0,
+objectCount: 0
+)
+,
+injectorFieldCount: 0
+);
+// TODO Injector的调用
+public override void InvokeMethod(GorgeObject gorgeObject, int methodId)
+{
+global::Gorge.Native.GorgeFramework.InputSignalFilter InputSignalFilter;
+if(gorgeObject is global::Gorge.Native.GorgeFramework.InputSignalFilter)
+{
+InputSignalFilter = (global::Gorge.Native.GorgeFramework.InputSignalFilter) gorgeObject;
+}
+else if(gorgeObject is CompiledGorgeObject u)
+{
+InputSignalFilter = (global::Gorge.Native.GorgeFramework.InputSignalFilter) u.NativeObject;
+}
+else
+{
+throw new Exception($"尝试在{gorgeObject}对象上调用{Declaration.Name}类的方法");
+}
+switch (methodId)
+{
+case 0:
+case 2:
+InvokeParameterPool.BoolReturn = InputSignalFilter.CanDetect(InvokeParameterPool.String[0]);
+break;
+case 1:
+case 3:
+InvokeParameterPool.BoolReturn = InputSignalFilter.Detect(InvokeParameterPool.String[0], InvokeParameterPool.Int[0], InvokeParameterPool.Int[1], InvokeParameterPool.Object[0], InvokeParameterPool.Object[1]);
+break;
+default:
+global::Gorge.Native.GorgeFramework.SignalFilter.Class.InvokeMethod(gorgeObject, methodId);
+break;
+}
+}
+public override void InvokeStaticMethod(int methodId)
+{
+switch (methodId)
+{
+default:
+global::Gorge.Native.GorgeFramework.SignalFilter.Class.InvokeStaticMethod(methodId);
+break;
+}
+}
+protected override GorgeObject DoConstruct(GorgeObject targetObject, int constructorId)
+{
+var injector = InvokeParameterPool.Injector;
+switch (constructorId)
+{
+case 1:
+if (targetObject != null)
+{
+if (targetObject is CompiledGorgeObject u) // 外部继承本Native类
+{
+var instance = ConstructInstance(injector, (GorgeDelegate)InvokeParameterPool.Object[0], global::Gorge.Native.Gorge.IntArray.FromGorgeObject(InvokeParameterPool.Object[1]), (GorgeDelegate)InvokeParameterPool.Object[2], (GorgeDelegate)InvokeParameterPool.Object[3], InvokeParameterPool.Int[0], InvokeParameterPool.Bool[0], InvokeParameterPool.Bool[1]);
+instance.OuterCompiledObject = u;
+u.NativeObject = instance;
+return targetObject;
+}
+else
+{
+throw new Exception($"类{Declaration.Name}的{constructorId}号构造方法被Native类调用");
+}
+}
+else // 直接从本Native类构造
+{
+return global::Gorge.Native.GorgeFramework.InputSignalFilter.ConstructInstance(injector, (GorgeDelegate)InvokeParameterPool.Object[0], global::Gorge.Native.Gorge.IntArray.FromGorgeObject(InvokeParameterPool.Object[1]), (GorgeDelegate)InvokeParameterPool.Object[2], (GorgeDelegate)InvokeParameterPool.Object[3], InvokeParameterPool.Int[0], InvokeParameterPool.Bool[0], InvokeParameterPool.Bool[1]);
+}
+break;
+default:
+throw new Exception($"类{Declaration.Name}无编号为{constructorId}的构造方法");
+}
+}
+public override int GetInjectorIntDefaultValue(int defaultValueIndex)
+{
+return defaultValueIndex switch
+{
+_ => base.GetInjectorIntDefaultValue(defaultValueIndex)
+};
+}
+public override float GetInjectorFloatDefaultValue(int defaultValueIndex)
+{
+return defaultValueIndex switch
+{
+_ => base.GetInjectorFloatDefaultValue(defaultValueIndex)
+};
+}
+public override bool GetInjectorBoolDefaultValue(int defaultValueIndex)
+{
+return defaultValueIndex switch
+{
+_ => base.GetInjectorBoolDefaultValue(defaultValueIndex)
+};
+}
+public override string GetInjectorStringDefaultValue(int defaultValueIndex)
+{
+return defaultValueIndex switch
+{
+_ => base.GetInjectorStringDefaultValue(defaultValueIndex)
+};
+}
+public override GorgeObject GetInjectorObjectDefaultValue(int defaultValueIndex)
+{
+return defaultValueIndex switch
+{
+_ => base.GetInjectorObjectDefaultValue(defaultValueIndex)
+};
+}
+}
+public new class SpecificInjector : global::Gorge.Native.GorgeFramework.SignalFilter.SpecificInjector
+{
+public override ClassDeclaration InjectedClassDeclaration { get; } = global::Gorge.Native.GorgeFramework.InputSignalFilter.Class.Declaration;
+public override GorgeObject Instantiate(int constructorIndex, params object[] args)
+{
+return constructorIndex switch
+{
+1 => ConstructInstance(this, (GorgeDelegate)args[0], global::Gorge.Native.Gorge.IntArray.FromGorgeObject((GorgeObject)args[1]), (GorgeDelegate)args[2], (GorgeDelegate)args[3], (int)args[4], (bool)args[5], (bool)args[6]),
+_ => throw new Exception($"Image类没有编号为{constructorIndex}的构造方法")
+};
+}
+public override void SetInjectorInt(int index, int value)
+{
+switch (index)
+{
+default:
+base.SetInjectorInt(index, value);
+break;
+}
+}
+public override void SetInjectorIntDefault(int index)
+{
+switch (index)
+{
+default:
+base.SetInjectorIntDefault(index);
+break;
+}
+}
+public override int GetInjectorInt(int index)
+{
+return index switch
+{
+_ => base.GetInjectorInt(index)
+};
+}
+public override bool GetInjectorIntDefault(int index)
+{
+return index switch
+{
+_ => base.GetInjectorIntDefault(index)
+};
+}
+public override void SetInjectorFloat(int index, float value)
+{
+switch (index)
+{
+default:
+base.SetInjectorFloat(index, value);
+break;
+}
+}
+public override void SetInjectorFloatDefault(int index)
+{
+switch (index)
+{
+default:
+base.SetInjectorFloatDefault(index);
+break;
+}
+}
+public override float GetInjectorFloat(int index)
+{
+return index switch
+{
+_ => base.GetInjectorFloat(index)
+};
+}
+public override bool GetInjectorFloatDefault(int index)
+{
+return index switch
+{
+_ => base.GetInjectorFloatDefault(index)
+};
+}
+public override void SetInjectorBool(int index, bool value)
+{
+switch (index)
+{
+default:
+base.SetInjectorBool(index, value);
+break;
+}
+}
+public override void SetInjectorBoolDefault(int index)
+{
+switch (index)
+{
+default:
+base.SetInjectorBoolDefault(index);
+break;
+}
+}
+public override bool GetInjectorBool(int index)
+{
+return index switch
+{
+_ => base.GetInjectorBool(index)
+};
+}
+public override bool GetInjectorBoolDefault(int index)
+{
+return index switch
+{
+_ => base.GetInjectorBoolDefault(index)
+};
+}
+public override void SetInjectorString(int index, string value)
+{
+switch (index)
+{
+default:
+base.SetInjectorString(index, value);
+break;
+}
+}
+public override void SetInjectorStringDefault(int index)
+{
+switch (index)
+{
+default:
+base.SetInjectorStringDefault(index);
+break;
+}
+}
+public override string GetInjectorString(int index)
+{
+return index switch
+{
+_ => base.GetInjectorString(index)
+};
+}
+public override bool GetInjectorStringDefault(int index)
+{
+return index switch
+{
+_ => base.GetInjectorStringDefault(index)
+};
+}
+public override void SetInjectorObject(int index, GorgeObject value)
+{
+switch (index)
+{
+default:
+base.SetInjectorObject(index, value);
+break;
+}
+}
+public override void SetInjectorObjectDefault(int index)
+{
+switch (index)
+{
+default:
+base.SetInjectorObjectDefault(index);
+break;
+}
+}
+public override GorgeObject GetInjectorObject(int index)
+{
+return index switch
+{
+_ => base.GetInjectorObject(index)
+};
+}
+public override bool GetInjectorObjectDefault(int index)
+{
+return index switch
+{
+_ => base.GetInjectorObjectDefault(index)
+};
+}
+public override bool EditableEquals(Injector target)
+{
+throw new NotImplementedException("暂未实现比较器");
+}
+public override GorgeObject Clone()
+{
+var injector = new global::Gorge.Native.GorgeFramework.InputSignalFilter.SpecificInjector();
+CloneTo(injector);
+return injector;
+}
+public void CloneTo(global::Gorge.Native.GorgeFramework.InputSignalFilter.SpecificInjector toInjector)
+{
+base.CloneTo(toInjector);
+}
+}
+/// <summary>
+/// 静态单例
+/// </summary>
+[GorgeNativeClass]
+public new static readonly Implementation Class = new();
+public new static SpecificInjector EmptyInjector() => new SpecificInjector();
+public override GorgeClass GorgeClass { get; } = Class;
+public override GorgeObject RealObject => OuterCompiledObject ?? this;
+public new GorgeObject OuterCompiledObject;
+public new static global::Gorge.Native.GorgeFramework.InputSignalFilter FromGorgeObject(GorgeObject gorgeObject)
+{
+if (gorgeObject is CompiledGorgeObject u)
+{
+return (global::Gorge.Native.GorgeFramework.InputSignalFilter) u.NativeObject;
+}
+return (global::Gorge.Native.GorgeFramework.InputSignalFilter) gorgeObject;
+}
+public override void InvokeMethod(int methodIndex)
+{
+Class.InvokeMethod(this, methodIndex);
+}
+/// <summary>
+/// 6号字段
+/// 索引为object:3
+/// </summary>
+public GorgeDelegate touchArea;
+/// <summary>
+/// 1号构造方法对应的工厂方法
+/// </summary>
+public new static global::Gorge.Native.GorgeFramework.InputSignalFilter ConstructInstance(Injector injector, GorgeDelegate priority, global::Gorge.Native.Gorge.IntArray touchType, GorgeDelegate touchArea, GorgeDelegate endTime, int timeMode, bool acceptConsume, bool denyConsume)
+{
+return new global::Gorge.Native.GorgeFramework.InputSignalFilter(injector, priority, touchType, touchArea, endTime, timeMode, acceptConsume, denyConsume);
+}
+/// <summary>
+/// 字段初始化方法，应当被构造方法的实现首先调用
+/// </summary>
+private void FieldInitialize(Injector injector)
+{
+this.touchArea = InitializeField_touchArea();}
+private static partial GorgeDelegate InitializeField_touchArea();public override int GetIntField(int fieldIndex)
+{
+return fieldIndex switch
+{
+_ => base.GetIntField(fieldIndex)
+};
+}
+public override void SetIntField(int fieldIndex, int value)
+{
+switch (fieldIndex)
+{
+default:
+base.SetIntField(fieldIndex,value);
+break;
+}
+}
+public override float GetFloatField(int fieldIndex)
+{
+return fieldIndex switch
+{
+_ => base.GetFloatField(fieldIndex)
+};
+}
+public override void SetFloatField(int fieldIndex, float value)
+{
+switch (fieldIndex)
+{
+default:
+base.SetFloatField(fieldIndex,value);
+break;
+}
+}
+public override bool GetBoolField(int fieldIndex)
+{
+return fieldIndex switch
+{
+_ => base.GetBoolField(fieldIndex)
+};
+}
+public override void SetBoolField(int fieldIndex, bool value)
+{
+switch (fieldIndex)
+{
+default:
+base.SetBoolField(fieldIndex,value);
+break;
+}
+}
+public override string GetStringField(int fieldIndex)
+{
+return fieldIndex switch
+{
+_ => base.GetStringField(fieldIndex)
+};
+}
+public override void SetStringField(int fieldIndex, string value)
+{
+switch (fieldIndex)
+{
+default:
+base.SetStringField(fieldIndex,value);
+break;
+}
+}
+public override GorgeObject GetObjectField(int fieldIndex)
+{
+return fieldIndex switch
+{
+3 => touchArea,
+_ => base.GetObjectField(fieldIndex)
+};
+}
+public override void SetObjectField(int fieldIndex, GorgeObject value)
+{
+switch (fieldIndex)
+{
+case 3:
+this.touchArea = (GorgeDelegate)value;
+return;
+default:
+base.SetObjectField(fieldIndex,value);
+break;
+}
+}
+/// <summary>
+/// 2号方法
+/// </summary>
+/// <returns></returns>
+public override partial bool CanDetect(string channelName);
+/// <summary>
+/// 3号方法
+/// </summary>
+/// <returns></returns>
+public override partial bool Detect(string channelName, int signalId, int conditionType, GorgeObject signalValue, GorgeObject lastSignalValue);
+private static partial Annotation[] ClassAnnotations();
+}
+}
