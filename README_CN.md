@@ -58,7 +58,7 @@
 
 构建 C# 解决方案：在 IDE 中打开解决方案，或在终端执行 `dotnet build`。
 
-### 4. （可选）构建 Rust 九宫格扩展
+### 4. 构建 Rust 九宫格扩展
 
 ```bash
 cd addons/nine_slice_sprite_2d_godot2d
