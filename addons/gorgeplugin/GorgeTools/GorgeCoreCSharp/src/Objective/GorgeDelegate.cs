@@ -196,6 +196,7 @@ namespace Gorge.GorgeLanguage.Objective
                         parameters[i] = InvokeParameterPool.String[parameterCount.Count(parameterTypes[i].BasicType)];
                         break;
                     case BasicType.Object:
+                    case BasicType.Interface:
                         parameters[i] = InvokeParameterPool.Object[parameterCount.Count(parameterTypes[i].BasicType)];
                         break;
                     default:
@@ -221,6 +222,7 @@ namespace Gorge.GorgeLanguage.Objective
                     InvokeParameterPool.StringReturn = (string) result;
                     break;
                 case BasicType.Object:
+                case BasicType.Interface:
                     InvokeParameterPool.ObjectReturn = (GorgeObject) result;
                     break;
                 default:
@@ -292,6 +294,7 @@ namespace Gorge.GorgeLanguage.Objective
                             typeCheckSuccess = argType == typeof(string);
                             break;
                         case BasicType.Object:
+                        case BasicType.Interface:
                             typeCheckSuccess = typeof(GorgeObject).IsAssignableFrom(argType);
                             break;
                         default:
@@ -327,6 +330,7 @@ namespace Gorge.GorgeLanguage.Objective
                         InvokeParameterPool.String[argumentCount.Count(parameterTypes[i].BasicType)] = (string) args[i];
                         break;
                     case BasicType.Object:
+                    case BasicType.Interface:
                         InvokeParameterPool.Object[argumentCount.Count(parameterTypes[i].BasicType)] =
                             (GorgeObject) args[i];
                         break;
@@ -350,7 +354,7 @@ namespace Gorge.GorgeLanguage.Objective
                 BasicType.Float => InvokeParameterPool.FloatReturn,
                 BasicType.Bool => InvokeParameterPool.BoolReturn,
                 BasicType.String => InvokeParameterPool.StringReturn,
-                BasicType.Object => InvokeParameterPool.ObjectReturn,
+                BasicType.Object or BasicType.Interface => InvokeParameterPool.ObjectReturn,
                 _ => throw new ArgumentOutOfRangeException()
             };
         }

@@ -6,10 +6,12 @@ using Gorge.GorgeFramework;
 using Gorge.GorgeFramework.Adaptor;
 using Gorge.GorgeFramework.Chart;
 using Gorge.GorgeFramework.Runtime;
+using Gorge.GorgeFramework.Runtime.Environment;
+using Gorge.GorgeFramework.Simulators;
 
 namespace GorgePlugin.addons.gorgeplugin;
 
-public partial class GamePlayer : Node
+public partial class GamePlayer : Node, ISimulationDriver
 {
     private const string DefaultNativePackagePath = "res://addons/gorgeplugin/Native.zip";
 
@@ -49,6 +51,18 @@ public partial class GamePlayer : Node
     [Export]
     public bool GorgeAutoPlay { get; set; } = true;
 
+    [Export]
+    public bool EnableTouchInput { get; set; } = true;
+
+    [Export]
+    public bool EnableMouseInput { get; set; } = false;
+
+    [Export]
+    public bool EnablePreloadSignal { get; set; } = false;
+
+    [Export]
+    public string PreloadSignalPath { get; set; } = "";
+
     public readonly List<Package> Packages = new();
 
     public string ChartName;
@@ -66,6 +80,11 @@ public partial class GamePlayer : Node
     private bool _runtimePrepared;
     private Node2D _playerRoot;
     private Camera2D _camera;
+    private GodotTouchSignalCollector _touchSignalCollector;
+    private double _syncRealTime;
+    private float _syncSimulateTime;
+
+    public GorgeSimulationRuntime Runtime => RuntimeStatic.Runtime?.SimulationRuntime;
 
     public override void _Ready()
     {
@@ -244,6 +263,7 @@ public partial class GamePlayer : Node
 
             RuntimeStatic.Runtime.StartSimulation();
             SetPlaying(true);
+            ConfigureAndEnableTouchSignalCollector();
             EmitSignal(SignalName.ChartStarted);
             return true;
         }
@@ -260,6 +280,11 @@ public partial class GamePlayer : Node
         try
         {
             var wasPlaying = IsPlaying;
+
+            if (wasPlaying)
+            {
+                DisableTouchSignalCollector();
+            }
 
             if (RuntimeStatic.Runtime?.SimulationRuntime?.IsSimulating == true)
             {
@@ -374,12 +399,43 @@ public partial class GamePlayer : Node
 
         viewportSize = GetViewport().GetVisibleRect().Size;
         Instance = _camera;
+
+        if (_touchSignalCollector == null)
+        {
+            _touchSignalCollector = new GodotTouchSignalCollector
+            {
+                Name = "GodotTouchSignalCollector"
+            };
+            AddChild(_touchSignalCollector);
+        }
     }
 
     private void ApplyStaticConfig()
     {
         StaticConfig.TerminateTime = TerminateTime;
         StaticConfig.IsAutoPlay = GorgeAutoPlay;
+    }
+
+    private void ConfigureAndEnableTouchSignalCollector()
+    {
+        if (_touchSignalCollector == null)
+        {
+            InitializeRenderRoot();
+        }
+
+        _touchSignalCollector.EnableTouchInput = EnableTouchInput;
+        _touchSignalCollector.EnableMouseInput = EnableMouseInput;
+        _touchSignalCollector.EnableAutoPlay = GorgeAutoPlay;
+        _touchSignalCollector.EnablePreloadSignal = EnablePreloadSignal;
+        _touchSignalCollector.PreloadSignalPath = PreloadSignalPath;
+        _touchSignalCollector.ErrorReporter = ReportError;
+        _touchSignalCollector.Initialize(this);
+        _touchSignalCollector.Enable();
+    }
+
+    private void DisableTouchSignalCollector()
+    {
+        _touchSignalCollector?.Disable();
     }
 
     private void StopForPackageMutation()
@@ -406,6 +462,7 @@ public partial class GamePlayer : Node
 
         if (RuntimeStatic.Runtime.SimulationRuntime?.IsSimulating == true)
         {
+            DisableTouchSignalCollector();
             RuntimeStatic.Runtime.StopSimulation();
         }
 
@@ -462,14 +519,40 @@ public partial class GamePlayer : Node
             return;
         }
 
+        if (value)
+        {
+            _syncRealTime = GetRealTimeSeconds();
+            _syncSimulateTime = RuntimeStatic.Runtime?.SimulationRuntime?.Simulation?.SimulationMachine?.SimulateTime ?? 0f;
+        }
+
         IsPlaying = value;
         EmitSignal(SignalName.PlaybackStateChanged, IsPlaying);
     }
 
     private void OnRuntimeTerminated()
     {
+        if (IsPlaying)
+        {
+            DisableTouchSignalCollector();
+        }
+
         SetPlaying(false);
         EmitSignal(SignalName.ChartStopped, "terminated");
+    }
+
+    public float GetRealSimulateTime()
+    {
+        if (!IsPlaying || RuntimeStatic.Runtime?.SimulationRuntime?.Simulation?.SimulationMachine == null)
+        {
+            return -1f;
+        }
+
+        return (float)(GetRealTimeSeconds() - _syncRealTime + _syncSimulateTime);
+    }
+
+    private static double GetRealTimeSeconds()
+    {
+        return Godot.Time.GetTicksUsec() / 1_000_000.0;
     }
 
     private void ReportError(string message)

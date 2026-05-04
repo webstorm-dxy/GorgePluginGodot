@@ -636,7 +636,7 @@ namespace Gorge.GorgeCompiler.Visitors
             }
 
             // 不使用外部变量的情况，编译为常量delegate对象
-            if (delegateScope.VariableMap.Count == 0 && delegateScope.FieldMap.Count == 0)
+            if (delegateScope.DelegateFields.Count == 0)
             {
                 var (optimizedCode, typeCount) = new IntermediateCodeOptimizer("Delegate", "Delegate", codes,
                     delegateScope.TotalVariableCount()).RebuildCodeList();
@@ -675,6 +675,13 @@ namespace Gorge.GorgeCompiler.Visitors
                                 _block, saveOuterValueCode);
                             saveOuterValueCode.Add(IntermediateCode.SetField(delegateField.Type, delegateObjectAddress,
                                 delegateField.Index, (Address) fieldValue));
+                            break;
+                        case DelegateFieldSymbol delegateFieldSymbol:
+                            var delegateFieldValue =
+                                new FieldReferenceExpression(null, delegateFieldSymbol, context).AppendCodes(
+                                    _block, saveOuterValueCode);
+                            saveOuterValueCode.Add(IntermediateCode.SetField(delegateField.Type, delegateObjectAddress,
+                                delegateField.Index, (Address) delegateFieldValue));
                             break;
                         default:
                             throw new GorgeCompilerException("非预期的代理字段类型");

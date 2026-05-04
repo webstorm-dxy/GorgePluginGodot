@@ -25,10 +25,17 @@ namespace Gorge.Native.GorgeFramework
         public override partial bool Detect(string channelName, int signalId, int conditionType,
             GorgeObject signalValue, GorgeObject lastSignalValue)
         {
-            if (signalValue is not TouchSignal touchValue || lastSignalValue is not TouchSignal lastTouchValue)
+            if (signalValue == null)
+            {
+                return false;
+            }
+
+            if (signalValue is not TouchSignal touchValue || lastSignalValue is not TouchSignal and not null)
             {
                 throw new Exception();
             }
+
+            var lastTouchValue = (TouchSignal) lastSignalValue;
 
             switch (conditionType)
             {

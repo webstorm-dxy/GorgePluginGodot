@@ -35,6 +35,9 @@ namespace Gorge.GorgeCompiler.CompileContext.Symbol
                 case VariableSymbol variableSymbol:
                     Type = variableSymbol.Address.Type;
                     break;
+                case DelegateFieldSymbol delegateFieldSymbol:
+                    Type = delegateFieldSymbol.Type;
+                    break;
                 default:
                     throw new GorgeCompilerException("代理域内不能引用目标类型外部符号");
             }

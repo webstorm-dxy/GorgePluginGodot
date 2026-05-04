@@ -72,6 +72,14 @@ namespace Gorge.GorgeCompiler.CompileContext.Scope
             return fieldSymbol;
         }
 
+        private Symbol<string> AddDelegateField(DelegateFieldSymbol symbol)
+        {
+            var fieldSymbol = new DelegateFieldSymbol(this, symbol, FieldCount.Count(symbol.Type.BasicType));
+            AddSymbol(fieldSymbol);
+            DelegateFields.Add(fieldSymbol);
+            return fieldSymbol;
+        }
+
         public override bool TryGetSymbol(string identifier, out Symbol<string> symbol,
             CodeLocation? referenceLocation = null, bool searchParentScope = true,
             bool searchUsings = true)
@@ -107,6 +115,9 @@ namespace Gorge.GorgeCompiler.CompileContext.Scope
                                 return true;
                             case FieldSymbol fieldSymbol:
                                 symbol = AddDelegateField(fieldSymbol);
+                                return true;
+                            case DelegateFieldSymbol delegateFieldSymbol:
+                                symbol = AddDelegateField(delegateFieldSymbol);
                                 return true;
                         }
 

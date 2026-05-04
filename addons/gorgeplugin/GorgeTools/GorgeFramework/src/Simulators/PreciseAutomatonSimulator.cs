@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Gorge.GorgeFramework.Automaton;
+using Gorge.GorgeLanguage.Objective;
 using Gorge.GorgeFramework.Runtime;
 using Gorge.GorgeFramework.Runtime.Environment;
 using Gorge.GorgeFramework.Signal;
@@ -127,25 +128,7 @@ namespace Gorge.GorgeFramework.Simulators
                     var allDetectionConditions = new List<SignalDetectionCondition>();
                     foreach (var (_, conditions) in detectionConditions) allDetectionConditions.AddRange(conditions);
 
-                    // 按当前信号序排序
-                    allDetectionConditions.Sort((a, b) =>
-                    {
-                        var length = Math.Max(a.Priority.length, b.Priority.length);
-                        for (var i = 0; i < length; i++)
-                        {
-                            var aPriority = a.Priority.length > i
-                                ? (float) ((Priority) a.Priority.Get(i)).getPriority.Invoke(value)
-                                : 0;
-                            var bPriority = b.Priority.length > i
-                                ? (float) ((Priority) b.Priority.Get(i)).getPriority.Invoke(value)
-                                : 0;
-                            var result = aPriority.CompareTo(bPriority);
-
-                            if (result != 0) return result;
-                        }
-
-                        return 0;
-                    });
+                    SortDetectionConditionsByPriority(allDetectionConditions, value);
 
                     // 消耗标记
                     var consumeFlag = false;
@@ -202,6 +185,63 @@ namespace Gorge.GorgeFramework.Simulators
             }
 
             return gameActions.ToArray();
+        }
+
+        private static void SortDetectionConditionsByPriority(List<SignalDetectionCondition> detectionConditions,
+            GorgeObject signalValue)
+        {
+            var prioritizedConditions = new List<PrioritizedDetectionCondition>(detectionConditions.Count);
+            for (var i = 0; i < detectionConditions.Count; i++)
+            {
+                var condition = detectionConditions[i];
+                prioritizedConditions.Add(new PrioritizedDetectionCondition(condition,
+                    CapturePriorityValues(condition, signalValue), i));
+            }
+
+            prioritizedConditions.Sort(ComparePriorityValues);
+
+            detectionConditions.Clear();
+            foreach (var prioritizedCondition in prioritizedConditions)
+                detectionConditions.Add(prioritizedCondition.Condition);
+        }
+
+        private static float[] CapturePriorityValues(SignalDetectionCondition condition, GorgeObject signalValue)
+        {
+            var values = new float[condition.Priority.length];
+            for (var i = 0; i < values.Length; i++)
+                values[i] = (float) ((Priority) condition.Priority.Get(i)).getPriority.Invoke(signalValue);
+
+            return values;
+        }
+
+        private static int ComparePriorityValues(PrioritizedDetectionCondition a, PrioritizedDetectionCondition b)
+        {
+            var length = Math.Max(a.PriorityValues.Length, b.PriorityValues.Length);
+            for (var i = 0; i < length; i++)
+            {
+                var aPriority = a.PriorityValues.Length > i ? a.PriorityValues[i] : 0;
+                var bPriority = b.PriorityValues.Length > i ? b.PriorityValues[i] : 0;
+                var result = aPriority.CompareTo(bPriority);
+
+                if (result != 0) return result;
+            }
+
+            return a.OriginalIndex.CompareTo(b.OriginalIndex);
+        }
+
+        private readonly struct PrioritizedDetectionCondition
+        {
+            public readonly SignalDetectionCondition Condition;
+            public readonly int OriginalIndex;
+            public readonly float[] PriorityValues;
+
+            public PrioritizedDetectionCondition(SignalDetectionCondition condition, float[] priorityValues,
+                int originalIndex)
+            {
+                Condition = condition;
+                PriorityValues = priorityValues;
+                OriginalIndex = originalIndex;
+            }
         }
     }
 }
