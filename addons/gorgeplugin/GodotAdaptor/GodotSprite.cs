@@ -162,6 +162,17 @@ public partial class GodotNineSliceSprite : Godot.Node, INineSliceSprite
         {
             try
             {
+                // Diagnostic: check if the class exists in ClassDB
+                bool classExists = ClassDB.ClassExists("NineSliceSprite2D");
+                if (!classExists)
+                {
+                    GD.PrintErr("NineSliceSprite2D class not found in ClassDB. The GDExtension may not have loaded.");
+                    GD.PrintErr("Diagnostic: 1) Is .gdextension at res://addons/nine_slice_sprite_2d_godot2d/?");
+                    GD.PrintErr("            2) Is the .dylib built for the correct Godot version?");
+                    GD.PrintErr("            3) Run 'godot -e' to regenerate extension_list.cfg");
+                    return;
+                }
+
                 _rustNineSlice = ClassDB.Instantiate("NineSliceSprite2D").As<Godot.Node>();
                 if (_rustNineSlice != null)
                 {
@@ -173,6 +184,7 @@ public partial class GodotNineSliceSprite : Godot.Node, INineSliceSprite
             catch (Exception e)
             {
                 GD.PrintErr($"NineSliceSprite2D GDExtension not loaded: {e.Message}");
+                GD.PrintErr($"Stack: {e.StackTrace}");
             }
         }
     }
@@ -246,6 +258,13 @@ public partial class GodotNineSliceSprite : Godot.Node, INineSliceSprite
 
         try
         {
+            bool classExists = ClassDB.ClassExists("NineSliceSprite2D");
+            if (!classExists)
+            {
+                GD.PrintErr("NineSliceSprite2D class not found in ClassDB (EnsureRustNode).");
+                return;
+            }
+
             _rustNineSlice = ClassDB.Instantiate("NineSliceSprite2D").As<Godot.Node>();
             if (_rustNineSlice != null)
             {
@@ -257,6 +276,7 @@ public partial class GodotNineSliceSprite : Godot.Node, INineSliceSprite
         catch (Exception e)
         {
             GD.PrintErr($"NineSliceSprite2D GDExtension not loaded: {e.Message}");
+            GD.PrintErr($"Stack: {e.StackTrace}");
         }
     }
 }

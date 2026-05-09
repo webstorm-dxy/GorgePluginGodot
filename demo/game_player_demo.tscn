@@ -15,10 +15,10 @@ EnableMouseInput = true
 
 [node name="Panel" type="VBoxContainer" parent="." unique_id=2145932767]
 layout_mode = 0
-offset_left = 24.0
-offset_top = 24.0
-offset_right = 520.0
-offset_bottom = 160.0
+offset_left = 761.0
+offset_top = 410.0
+offset_right = 1257.0
+offset_bottom = 546.0
 
 [node name="TitleLabel" type="Label" parent="Panel" unique_id=560809569]
 layout_mode = 2

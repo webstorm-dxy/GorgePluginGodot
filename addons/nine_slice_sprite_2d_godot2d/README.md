@@ -132,7 +132,7 @@ Rust 实现内部还包含：
 
 ```toml
 [dependencies]
-godot = "0.4.5"
+godot = "=0.4.2"
 ```
 
 ## 开发说明

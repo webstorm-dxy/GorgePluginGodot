@@ -132,7 +132,7 @@ Current `Cargo.toml` dependency:
 
 ```toml
 [dependencies]
-godot = "0.4.5"
+godot = "=0.4.2"
 ```
 
 ## Development Notes
