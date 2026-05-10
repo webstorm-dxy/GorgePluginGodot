@@ -33,6 +33,12 @@ public partial class GamePlayer : Node, ISimulationDriver
     [Signal]
     public delegate void PlayerErrorEventHandler(string message);
 
+    [Signal]
+    public delegate void BytecodeCompiledEventHandler(string cachePath);
+
+    [Signal]
+    public delegate void BytecodeCompileFailedEventHandler(string message);
+
     [Export]
     public Godot.Collections.Array<string> RuntimePackagePaths { get; set; } = new()
     {
@@ -324,6 +330,52 @@ public partial class GamePlayer : Node, ISimulationDriver
         StopChart();
     }
 
+    /// <summary>
+    /// Compile currently loaded .g source files to .gorge bytecode and save to cache.
+    /// The bytecode can be reused on next startup without recompilation.
+    /// </summary>
+    public bool CompileToBytecode()
+    {
+        try
+        {
+            ApplyStaticConfig();
+
+            // Collect packages from configured paths
+            var packages = new List<Package>();
+            foreach (var path in RuntimePackagePaths)
+                packages.Add(LoadPackageFromGodotPath(path, false));
+            foreach (var path in ChartPackagePaths)
+                packages.Add(LoadPackageFromGodotPath(path, true));
+
+            var cachePath = RuntimeManager.CompilePackagesToCache(packages);
+            if (cachePath != null)
+            {
+                GD.Print($"Gorge bytecode compiled successfully: {cachePath}");
+                EmitSignal(SignalName.BytecodeCompiled, cachePath);
+                return true;
+            }
+            else
+            {
+                var msg = "Bytecode compilation failed: cache file was not written.";
+                GD.PushError(msg);
+                EmitSignal(SignalName.BytecodeCompileFailed, msg);
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            var msg = $"Bytecode compilation failed: {ex.Message}";
+            GD.PushError(msg);
+            EmitSignal(SignalName.BytecodeCompileFailed, msg);
+            return false;
+        }
+    }
+
+    public bool compile_to_bytecode()
+    {
+        return CompileToBytecode();
+    }
+
     public bool add_package_path(string path, bool isChart)
     {
         return AddPackagePath(path, isChart);
@@ -414,6 +466,7 @@ public partial class GamePlayer : Node, ISimulationDriver
     {
         StaticConfig.TerminateTime = TerminateTime;
         StaticConfig.IsAutoPlay = GorgeAutoPlay;
+        StaticConfig.CacheDirectory = System.IO.Path.Combine(OS.GetUserDataDir(), "gorge_cache");
     }
 
     private void ConfigureAndEnableTouchSignalCollector()

@@ -7,6 +7,7 @@ extends Control
 @onready var player = $GamePlayer
 @onready var play_button: Button = $Panel/Buttons/PlayButton
 @onready var stop_button: Button = $Panel/Buttons/StopButton
+@onready var compile_button: Button = $Panel/Buttons/CompileButton
 @onready var status_label: Label = $Panel/StatusLabel
 
 var _started := false
@@ -16,9 +17,12 @@ var _errors: Array[String] = []
 func _ready() -> void:
     play_button.pressed.connect(player.request_play)
     stop_button.pressed.connect(player.request_stop)
+    compile_button.pressed.connect(player.compile_to_bytecode)
     player.connect("ChartStarted", Callable(self, "_on_chart_started"))
     player.connect("ChartStopped", Callable(self, "_on_chart_stopped"))
     player.connect("PlayerError", Callable(self, "_on_player_error"))
+    player.connect("BytecodeCompiled", Callable(self, "_on_bytecode_compiled"))
+    player.connect("BytecodeCompileFailed", Callable(self, "_on_bytecode_compile_failed"))
 
     var runtime_added: bool = player.add_runtime_package_path(runtime_package_path)
     var chart_added: bool = player.add_chart_package_path(chart_package_path)
@@ -53,3 +57,11 @@ func _on_chart_stopped(reason: String) -> void:
 func _on_player_error(message: String) -> void:
     _errors.append(message)
     status_label.text = "Error: %s" % message
+
+func _on_bytecode_compiled(path: String) -> void:
+    status_label.text = "Bytecode compiled: %s" % path
+    print("Bytecode compiled: %s" % path)
+
+func _on_bytecode_compile_failed(message: String) -> void:
+    _errors.append(message)
+    status_label.text = "Compile failed: %s" % message

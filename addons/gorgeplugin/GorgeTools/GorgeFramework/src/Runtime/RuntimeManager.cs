@@ -1,12 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using Gorge.GorgeCompiler;
 using Gorge.GorgeCompiler.CompileContext;
 using Gorge.GorgeFramework.Adaptor;
 using Gorge.GorgeFramework.Chart;
 using Gorge.GorgeFramework.Runtime.Environment;
 using Gorge.GorgeLanguage.Objective;
+using Gorge.GorgeLanguage.Serialization;
 
 namespace Gorge.GorgeFramework.Runtime
 {
@@ -44,10 +48,25 @@ namespace Gorge.GorgeFramework.Runtime
         public ClassImplementationContext CreateLanguageRuntime(List<Package> packages)
         {
             PackageList = new List<Package>();
-            // PackageList.Add(Deenty.GorgeCommonLibPackage());
             PackageList.AddRange(packages);
 
-            var compiledContext = Compile(PackageList);
+            // Try loading compiled bytecode from cache first
+            var compiledContext = LoadFromCache(PackageList);
+            if (compiledContext != null)
+            {
+                LanguageRuntime = new GorgeLanguageRuntime(GorgeNative.GorgeNativeImplementationBase(), compiledContext);
+                GorgeLanguageRuntime.Instance = LanguageRuntime;
+                FormContainer = new RuntimeFormContainer(LanguageRuntime);
+                State = RuntimeState.Compiled;
+                return null; // No ClassImplementationContext returned when loading from cache
+            }
+
+            // Cache miss — compile from source
+            var freshContext = Compile(PackageList);
+            compiledContext = freshContext;
+
+            // Save compiled bytecode to cache for next run
+            SaveToCache(PackageList, compiledContext);
 
             LanguageRuntime = new GorgeLanguageRuntime(GorgeNative.GorgeNativeImplementationBase(), compiledContext);
 
@@ -56,8 +75,8 @@ namespace Gorge.GorgeFramework.Runtime
             FormContainer = new RuntimeFormContainer(LanguageRuntime);
 
             State = RuntimeState.Compiled;
-            
-            return compiledContext;
+
+            return freshContext;
         }
 
         /// <summary>
@@ -216,6 +235,111 @@ namespace Gorge.GorgeFramework.Runtime
             SimulationRuntime.StopSimulation();
             State = RuntimeState.SimulationInitialized;
         }
+
+        #region Bytecode Cache
+
+        /// <summary>
+        /// Compute SHA256 hash of all source file paths + contents across packages.
+        /// Returns a hex string used as the cache key.
+        /// </summary>
+        private static string ComputeSourceHash(List<Package> packages)
+        {
+            using var sha = SHA256.Create();
+            // Hash each source file in a deterministic order
+            foreach (var pkg in packages)
+            {
+                foreach (var src in pkg.SourceCodeFiles.OrderBy(s => s.Path))
+                {
+                    var pathBytes = Encoding.UTF8.GetBytes(src.Path);
+                    sha.TransformBlock(pathBytes, 0, pathBytes.Length, null, 0);
+                    var codeBytes = Encoding.UTF8.GetBytes(src.Code);
+                    sha.TransformBlock(codeBytes, 0, codeBytes.Length, null, 0);
+                }
+            }
+            sha.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
+            return Convert.ToHexString(sha.Hash).ToLowerInvariant();
+        }
+
+        /// <summary>
+        /// Try to load a previously cached .gorge bytecode file.
+        /// Returns null if cache is not configured, doesn't exist, or is stale.
+        /// </summary>
+        private static IImplementationBase LoadFromCache(List<Package> packages)
+        {
+            if (string.IsNullOrEmpty(StaticConfig.CacheDirectory))
+                return null;
+
+            var hash = ComputeSourceHash(packages);
+            var cachePath = GetCacheFilePath(hash);
+
+            if (!File.Exists(cachePath))
+                return null;
+
+            try
+            {
+                return GorgeBinaryReader.ReadFromFile(cachePath, GorgeNative.GorgeNativeImplementationBase());
+            }
+            catch (Exception)
+            {
+                // Corrupt cache — delete and fall through to recompilation
+                try { File.Delete(cachePath); } catch { /* best-effort */ }
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Save compiled context as .gorge bytecode for future runs.
+        /// Only saves if CacheDirectory is configured.
+        /// </summary>
+        private static void SaveToCache(List<Package> packages, IImplementationBase context)
+        {
+            if (string.IsNullOrEmpty(StaticConfig.CacheDirectory))
+                return;
+
+            var hash = ComputeSourceHash(packages);
+            var cachePath = GetCacheFilePath(hash);
+
+            try
+            {
+                var dir = Path.GetDirectoryName(cachePath);
+                if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+                    Directory.CreateDirectory(dir);
+
+                GorgeBinaryWriter.WriteToFile(context, cachePath);
+            }
+            catch (Exception)
+            {
+                // Cache write failure is non-fatal — compilation succeeded, just can't persist
+            }
+        }
+
+        /// <summary>
+        /// Get the filesystem path to the .gorge cache file for the given source hash.
+        /// </summary>
+        private static string GetCacheFilePath(string hash)
+        {
+            return Path.Combine(StaticConfig.CacheDirectory, $"{hash}.gorge");
+        }
+
+        /// <summary>
+        /// Compile the given packages to .gorge bytecode and save to cache.
+        /// Returns the cache file path on success, or null on failure.
+        /// This bypasses the cache — always recompiles from source.
+        /// </summary>
+        public static string CompilePackagesToCache(List<Package> packages)
+        {
+            if (string.IsNullOrEmpty(StaticConfig.CacheDirectory))
+                throw new InvalidOperationException("CacheDirectory is not configured. Set StaticConfig.CacheDirectory first.");
+
+            var context = Compile(packages);
+            SaveToCache(packages, context);
+
+            var hash = ComputeSourceHash(packages);
+            var cachePath = GetCacheFilePath(hash);
+            return File.Exists(cachePath) ? cachePath : null;
+        }
+
+        #endregion
     }
 
     /// <summary>
