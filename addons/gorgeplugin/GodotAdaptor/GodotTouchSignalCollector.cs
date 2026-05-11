@@ -33,6 +33,9 @@ public partial class GodotTouchSignalCollector : Godot.Node, ISignalCollector
     private int _mouseTouchId;
     private GodotVector2 _rawMousePosition;
 
+    private readonly Dictionary<int, MoveSampleState> _touchMoveSample = new();
+    private MoveSampleState _mouseMoveSample;
+
     private Gorge.GorgeFramework.Simulators.ISimulationDriver _driver;
 
     public bool EnableTouchInput { get; set; } = true;
@@ -41,6 +44,19 @@ public partial class GodotTouchSignalCollector : Godot.Node, ISignalCollector
     public bool EnablePreloadSignal { get; set; }
     public string PreloadSignalPath { get; set; } = string.Empty;
     public Action<string> ErrorReporter { get; set; }
+
+    /// <summary>
+    /// Minimum distance (in gameplay coordinates, 16x10 grid) between consecutive move edges.
+    /// Set to 0 to disable spatial sampling.
+    /// </summary>
+    public float MoveSpatialThreshold { get; set; } = 0.25f;
+
+    /// <summary>
+    /// Maximum simulate-time between forced move edges when spatial threshold is not crossed.
+    /// Prevents the signal from appearing frozen during very slow movements.
+    /// Set to 0 to disable temporal sampling.
+    /// </summary>
+    public float MoveTemporalThreshold { get; set; } = 0.05f;
 
     public GorgeSimulationRuntime Runtime => _driver?.Runtime;
 
@@ -266,6 +282,7 @@ public partial class GodotTouchSignalCollector : Godot.Node, ISignalCollector
             return;
         }
 
+        _touchMoveSample.Remove(touchIndex);
         var signalId = GetTouchId(touchIndex);
         var position = ViewportPointToGameplayPosition(viewportPosition);
         var fragment = GetOrCreateTouchFragment(signalId, simulateTime, false, position);
@@ -296,6 +313,19 @@ public partial class GodotTouchSignalCollector : Godot.Node, ISignalCollector
             return;
         }
 
+        if (_touchMoveSample.TryGetValue(touchIndex, out var sample) && sample.Initialized)
+        {
+            if (GorgeVector2.Distance(sample.LastPosition, position) > 0.0001f)
+            {
+                fragment.Edges.Add(new Edge<GorgeObject>
+                {
+                    Time = simulateTime,
+                    Value = new TouchSignal(true, position)
+                });
+            }
+            _touchMoveSample.Remove(touchIndex);
+        }
+
         fragment.EndTime = simulateTime;
         fragment.Edges.Add(new Edge<GorgeObject>
         {
@@ -323,11 +353,38 @@ public partial class GodotTouchSignalCollector : Godot.Node, ISignalCollector
             return;
         }
 
+        if (!_touchMoveSample.TryGetValue(touchIndex, out var sample) || !sample.Initialized)
+        {
+            fragment.Edges.Add(new Edge<GorgeObject>
+            {
+                Time = simulateTime,
+                Value = new TouchSignal(true, position)
+            });
+            _touchMoveSample[touchIndex] = new MoveSampleState
+            {
+                LastPosition = position,
+                LastSimulateTime = simulateTime,
+                Initialized = true
+            };
+            return;
+        }
+
+        var spatialDelta = GorgeVector2.Distance(sample.LastPosition, position);
+        var temporalDelta = simulateTime - sample.LastSimulateTime;
+
+        if (spatialDelta < MoveSpatialThreshold && temporalDelta < MoveTemporalThreshold)
+        {
+            return;
+        }
+
         fragment.Edges.Add(new Edge<GorgeObject>
         {
             Time = simulateTime,
             Value = new TouchSignal(true, position)
         });
+        sample.LastPosition = position;
+        sample.LastSimulateTime = simulateTime;
+        _touchMoveSample[touchIndex] = sample;
     }
 
     private void RecordMouseDown(GodotVector2 viewportPosition)
@@ -338,6 +395,7 @@ public partial class GodotTouchSignalCollector : Godot.Node, ISignalCollector
             return;
         }
 
+        _mouseMoveSample = default;
         _mouseTouchId = _driver.Runtime.Automaton.GetDisposableSignalId();
         var position = ViewportPointToGameplayPosition(viewportPosition);
         var fragment = GetOrCreateTouchFragment(_mouseTouchId, simulateTime, false, position);
@@ -364,6 +422,20 @@ public partial class GodotTouchSignalCollector : Godot.Node, ISignalCollector
         }
 
         var position = ViewportPointToGameplayPosition(viewportPosition);
+
+        if (_mouseMoveSample.Initialized)
+        {
+            if (GorgeVector2.Distance(_mouseMoveSample.LastPosition, position) > 0.0001f)
+            {
+                fragment.Edges.Add(new Edge<GorgeObject>
+                {
+                    Time = simulateTime,
+                    Value = new TouchSignal(true, position)
+                });
+            }
+            _mouseMoveSample = default;
+        }
+
         fragment.EndTime = simulateTime;
         fragment.Edges.Add(new Edge<GorgeObject>
         {
@@ -386,7 +458,27 @@ public partial class GodotTouchSignalCollector : Godot.Node, ISignalCollector
         }
 
         var position = ViewportPointToGameplayPosition(viewportPosition);
-        if (TouchSignal.FromGorgeObject(fragment.LatestValue).position.Equals(position))
+
+        if (!_mouseMoveSample.Initialized)
+        {
+            fragment.Edges.Add(new Edge<GorgeObject>
+            {
+                Time = simulateTime,
+                Value = new TouchSignal(true, position)
+            });
+            _mouseMoveSample = new MoveSampleState
+            {
+                LastPosition = position,
+                LastSimulateTime = simulateTime,
+                Initialized = true
+            };
+            return;
+        }
+
+        var spatialDelta = GorgeVector2.Distance(_mouseMoveSample.LastPosition, position);
+        var temporalDelta = simulateTime - _mouseMoveSample.LastSimulateTime;
+
+        if (spatialDelta < MoveSpatialThreshold && temporalDelta < MoveTemporalThreshold)
         {
             return;
         }
@@ -396,6 +488,8 @@ public partial class GodotTouchSignalCollector : Godot.Node, ISignalCollector
             Time = simulateTime,
             Value = new TouchSignal(true, position)
         });
+        _mouseMoveSample.LastPosition = position;
+        _mouseMoveSample.LastSimulateTime = simulateTime;
     }
 
     private void RecordAutoPlay(float simulateTimeFrom, float simulateTimeTo, float chartTimeFrom, float chartTimeTo)
@@ -616,6 +710,13 @@ public partial class GodotTouchSignalCollector : Godot.Node, ISignalCollector
     }
 
     private readonly record struct RawTouchState(bool Pressed, GodotVector2 Position);
+
+    private struct MoveSampleState
+    {
+        public GorgeVector2 LastPosition;
+        public float LastSimulateTime;
+        public bool Initialized;
+    }
 
     private sealed class TouchSignalGorgeObjectConverter : JsonConverter<GorgeObject>
     {
