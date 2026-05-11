@@ -54,8 +54,20 @@ public partial class GamePlayer : Node, ISimulationDriver
     [Export]
     public float TerminateTime { get; set; } = 135.0f;
 
+    private bool _gorgeAutoPlay = true;
+
     [Export]
-    public bool GorgeAutoPlay { get; set; } = true;
+    public bool GorgeAutoPlay
+    {
+        get => _gorgeAutoPlay;
+        set
+        {
+            _gorgeAutoPlay = value;
+            StaticConfig.IsAutoPlay = value;
+            if (_touchSignalCollector != null)
+                _touchSignalCollector.EnableAutoPlay = value;
+        }
+    }
 
     [Export]
     public bool EnableTouchInput { get; set; } = true;
