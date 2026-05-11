@@ -612,7 +612,9 @@ public partial class GamePlayer : Node, ISimulationDriver
             return -1f;
         }
 
-        return (float)(GetRealTimeSeconds() - _syncRealTime + _syncSimulateTime);
+        var realTime = (float)(GetRealTimeSeconds() - _syncRealTime + _syncSimulateTime);
+        var simTime = RuntimeStatic.Runtime.SimulationRuntime.Simulation.SimulationMachine.SimulateTime;
+        return Math.Max(realTime, simTime);
     }
 
     private static double GetRealTimeSeconds()

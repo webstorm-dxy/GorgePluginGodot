@@ -6,7 +6,8 @@
       "mcp__godot-mcp__read_file",
       "mcp__godot-mcp__add_node",
       "mcp__godot-mcp__move_node",
-      "mcp__godot-mcp__set_node_properties"
+      "mcp__godot-mcp__set_node_properties",
+      "mcp__godot-mcp__get_project_settings"
     ]
   }
 }
