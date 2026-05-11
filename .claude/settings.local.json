@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(dotnet build:*)",
-      "mcp__godot-mcp__read_scene"
+      "mcp__godot-mcp__read_scene",
+      "mcp__godot-mcp__read_file",
+      "mcp__godot-mcp__add_node",
+      "mcp__godot-mcp__move_node",
+      "mcp__godot-mcp__set_node_properties"
     ]
   }
 }

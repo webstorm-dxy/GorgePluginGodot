@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Gorge.GorgeLanguage.VirtualMachine;
 using Gorge.Native.Gorge;
 
 namespace Gorge.GorgeLanguage.Objective
@@ -159,6 +160,27 @@ namespace Gorge.GorgeLanguage.Objective
             #endregion
         }
 
+        /// <summary>
+        /// 反序列化用构造器，接受预构建的 FixedFieldValuePool，跳过基于 [Inject] 注解的默认值提取。
+        /// </summary>
+        internal CompiledGorgeClass(
+            ClassDeclaration classDeclaration,
+            List<CompiledMethodImplementation> methodImplementations,
+            List<CompiledMethodImplementation> staticMethodImplementations,
+            List<CompiledConstructorImplementation> constructorImplementations,
+            List<CompiledFieldInitializerImplementation> fieldInitializerImplementations,
+            GorgeDelegateImplementation[] delegateImplementation,
+            FixedFieldValuePool injectorDefaultValues)
+        {
+            Declaration = classDeclaration;
+            MethodImplementations = methodImplementations;
+            StaticMethodImplementations = staticMethodImplementations;
+            ConstructorImplementations = constructorImplementations;
+            FieldInitializerImplementations = fieldInitializerImplementations;
+            DelegateImplementation = delegateImplementation;
+            _injectorDefaultValues = injectorDefaultValues;
+        }
+
         public override Injector EmptyInjector() => new CompiledInjector(Declaration);
 
         public override ClassDeclaration Declaration { get; }
@@ -265,8 +287,28 @@ namespace Gorge.GorgeLanguage.Objective
                 targetObject = new CompiledGorgeObject(this);
             }
 
+            // 存储调用参数（值类型用 stackalloc 避免堆分配，引用类型保留托管数组）
+            const int poolLen = InvokeParameterPool.PoolSize;
+            Span<int> savedInvokeInt = stackalloc int[poolLen];
+            Span<float> savedInvokeFloat = stackalloc float[poolLen];
+            Span<bool> savedInvokeBool = stackalloc bool[poolLen];
+            var savedInvokeString = new string[InvokeParameterPool.String.Length];
+            var savedInvokeObject = new GorgeObject[InvokeParameterPool.Object.Length];
+            InvokeParameterPool.Int.AsSpan().CopyTo(savedInvokeInt);
+            InvokeParameterPool.Float.AsSpan().CopyTo(savedInvokeFloat);
+            InvokeParameterPool.Bool.AsSpan().CopyTo(savedInvokeBool);
+            InvokeParameterPool.String.CopyTo(savedInvokeString, 0);
+            InvokeParameterPool.Object.CopyTo(savedInvokeObject, 0);
+
             // 本类字段初始化
             FieldInitialize(targetObject);
+
+            // 还原存储的调用参数（值类型拷贝回池数组，引用类型替换引用）
+            savedInvokeInt.CopyTo(InvokeParameterPool.Int);
+            savedInvokeFloat.CopyTo(InvokeParameterPool.Float);
+            savedInvokeBool.CopyTo(InvokeParameterPool.Bool);
+            InvokeParameterPool.String = savedInvokeString;
+            InvokeParameterPool.Object = savedInvokeObject;
 
             // 本类构造逻辑，其中调用父类构造逻辑
             //   卸载调用参数

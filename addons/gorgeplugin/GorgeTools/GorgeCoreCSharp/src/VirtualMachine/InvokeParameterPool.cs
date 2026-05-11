@@ -10,11 +10,13 @@ namespace Gorge.GorgeLanguage.VirtualMachine
 
         // TODO 这里的长度取值可以在编译时算出来
 
-        public static int[] Int = new int[256];
-        public static float[] Float = new float[256];
-        public static bool[] Bool = new bool[256];
-        public static string[] String = new string[256];
-        public static GorgeObject[] Object = new GorgeObject[256];
+        public const int PoolSize = 256;
+
+        public static int[] Int = new int[PoolSize];
+        public static float[] Float = new float[PoolSize];
+        public static bool[] Bool = new bool[PoolSize];
+        public static string[] String = new string[PoolSize];
+        public static GorgeObject[] Object = new GorgeObject[PoolSize];
 
         /// <summary>
         /// 构造方法传递Injector的专用位

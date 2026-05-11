@@ -238,11 +238,8 @@ public static class GorgeBinaryReader
             // Read injector defaults from stream (consumes data), then apply after constructor
             var injectorDefaults = ReadInjectorDefaults(ctx, decl);
 
-            // Use 6-param constructor (Godot plugin version builds _injectorDefaultValues from annotations)
-            var compiledClass = new CompiledGorgeClass(decl, methods, staticMethods, ctors, fieldInits, delegates);
-
-            // Apply deserialized injector defaults on top of what the constructor set from annotations
-            ApplyInjectorDefaults(compiledClass, decl, injectorDefaults);
+            // Use 7-param constructor with pre-built injector defaults from stream
+            var compiledClass = new CompiledGorgeClass(decl, methods, staticMethods, ctors, fieldInits, delegates, injectorDefaults);
 
             ctx.Classes.Add(compiledClass);
             ctx.ClassByName[decl.Name] = compiledClass;
@@ -729,35 +726,6 @@ public static class GorgeBinaryReader
         }
 
         return pool;
-    }
-
-    /// <summary>
-    /// Apply deserialized injector defaults to a CompiledGorgeClass.
-    /// The constructor builds initial defaults from annotations; this overwrites
-    /// with the persisted values from the .gorge file for complete fidelity.
-    /// </summary>
-    private static void ApplyInjectorDefaults(CompiledGorgeClass compiledClass, ClassDeclaration decl, FixedFieldValuePool deserialized)
-    {
-        if (deserialized == null) return;
-
-        var field = typeof(CompiledGorgeClass).GetField("_injectorDefaultValues",
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        if (field == null) return;
-
-        var target = (FixedFieldValuePool)field.GetValue(compiledClass);
-        if (target == null) return;
-
-        var sc = decl.GetInjectorFieldDefaultValueStorageTypeCount();
-        for (int i = 0; i < sc.Int && i < deserialized.Int.Length && i < target.Int.Length; i++)
-            target.Int[i] = deserialized.Int[i];
-        for (int i = 0; i < sc.Float && i < deserialized.Float.Length && i < target.Float.Length; i++)
-            target.Float[i] = deserialized.Float[i];
-        for (int i = 0; i < sc.Bool && i < deserialized.Bool.Length && i < target.Bool.Length; i++)
-            target.Bool[i] = deserialized.Bool[i];
-        for (int i = 0; i < sc.String && i < deserialized.String.Length && i < target.String.Length; i++)
-            target.String[i] = deserialized.String[i];
-        for (int i = 0; i < sc.Object && i < deserialized.Object.Length && i < target.Object.Length; i++)
-            target.Object[i] = deserialized.Object[i];
     }
 
     #endregion

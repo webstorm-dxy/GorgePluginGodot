@@ -5,7 +5,11 @@
 
 [node name="GamePlayerDemo" type="Control" unique_id=1830009753]
 layout_mode = 3
-anchors_preset = 0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 script = ExtResource("1_1vxv8")
 
 [node name="GamePlayer" type="Node" parent="." unique_id=360816546]
@@ -14,11 +18,18 @@ GorgeAutoPlay = false
 EnableMouseInput = true
 
 [node name="Panel" type="VBoxContainer" parent="." unique_id=2145932767]
-layout_mode = 0
-offset_left = 761.0
-offset_top = 410.0
-offset_right = 1257.0
-offset_bottom = 546.0
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -1452.0
+offset_top = -752.0
+offset_right = -956.0
+offset_bottom = -592.0
+grow_horizontal = 0
+grow_vertical = 0
 
 [node name="TitleLabel" type="Label" parent="Panel" unique_id=560809569]
 layout_mode = 2
@@ -27,6 +38,11 @@ text = "Gorge GamePlayer Demo"
 [node name="StatusLabel" type="Label" parent="Panel" unique_id=366526662]
 layout_mode = 2
 text = "Ready"
+
+[node name="AutoplayCheckBox" type="CheckBox" parent="Panel" unique_id=1067913119]
+layout_mode = 2
+button_pressed = true
+text = "Autoplay"
 
 [node name="Buttons" type="HBoxContainer" parent="Panel" unique_id=963755490]
 layout_mode = 2
@@ -42,3 +58,5 @@ text = "Stop"
 [node name="CompileButton" type="Button" parent="Panel/Buttons" unique_id=876453210]
 layout_mode = 2
 text = "Compile"
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=183051143]

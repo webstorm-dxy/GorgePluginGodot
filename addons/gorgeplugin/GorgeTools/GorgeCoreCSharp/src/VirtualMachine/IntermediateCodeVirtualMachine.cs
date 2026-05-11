@@ -12,22 +12,14 @@ namespace Gorge.GorgeLanguage.VirtualMachine
     /// </summary>
     public class IntermediateCodeVirtualMachine
     {
-        private readonly VmStack<int> _intStack = new();
-        private readonly VmStack<float> _floatStack = new();
-        private readonly VmStack<bool> _boolStack = new();
-        private readonly VmStack<string> _stringStack = new();
-        private readonly VmStack<GorgeObject> _objectStack = new();
+        private readonly UnifiedOperandStack _stack = new();
 
         public void InvokeMethod(IVirtualMachineExecutable method, GorgeObject gorgeObject)
         {
             // method.Marker.Begin();
 
             var localVariableCount = method.LocalVariableCount;
-            _intStack.Push(localVariableCount.Int);
-            _floatStack.Push(localVariableCount.Float);
-            _boolStack.Push(localVariableCount.Bool);
-            _stringStack.Push(localVariableCount.String);
-            _objectStack.Push(localVariableCount.Object);
+            _stack.PushFrame(localVariableCount);
 
             #region 代码执行
 
@@ -630,11 +622,7 @@ namespace Gorge.GorgeLanguage.VirtualMachine
 
             #endregion
 
-            _intStack.Pop();
-            _floatStack.Pop();
-            _boolStack.Pop();
-            _stringStack.Pop();
-            _objectStack.Pop();
+            _stack.PopFrame();
 
             // method.Marker.End();
         }
@@ -644,7 +632,7 @@ namespace Gorge.GorgeLanguage.VirtualMachine
             return operand switch
             {
                 Immediate immediate => (int) immediate.Value,
-                Address address => _intStack[address.Index],
+                Address address => _stack.Int(address.Index),
                 _ => throw new Exception($"暂不支持此类操作数{operand.GetType()}")
             };
         }
@@ -654,7 +642,7 @@ namespace Gorge.GorgeLanguage.VirtualMachine
             return operand switch
             {
                 Immediate immediate => immediate.Value is int i ? i : (float) immediate.Value,
-                Address address => _floatStack[address.Index],
+                Address address => _stack.Float(address.Index),
                 _ => throw new Exception("暂不支持此类操作数")
             };
         }
@@ -664,7 +652,7 @@ namespace Gorge.GorgeLanguage.VirtualMachine
             return operand switch
             {
                 Immediate immediate => (bool) immediate.Value,
-                Address address => _boolStack[address.Index],
+                Address address => _stack.Bool(address.Index),
                 _ => throw new Exception("暂不支持此类操作数")
             };
         }
@@ -674,7 +662,7 @@ namespace Gorge.GorgeLanguage.VirtualMachine
             return operand switch
             {
                 Immediate immediate => (string) immediate.Value,
-                Address address => _stringStack[address.Index],
+                Address address => _stack.String(address.Index),
                 _ => throw new Exception("暂不支持此类操作数")
             };
         }
@@ -684,34 +672,34 @@ namespace Gorge.GorgeLanguage.VirtualMachine
             return operand switch
             {
                 Immediate immediate => (GorgeObject) immediate.Value,
-                Address address => _objectStack[address.Index],
+                Address address => _stack.Object(address.Index),
                 _ => throw new Exception("暂不支持此类操作数")
             };
         }
 
         private void SetInt(Address address, int value)
         {
-            _intStack[address.Index] = value;
+            _stack.Int(address.Index) = value;
         }
 
         private void SetFloat(Address address, float value)
         {
-            _floatStack[address.Index] = value;
+            _stack.Float(address.Index) = value;
         }
 
         private void SetBool(Address address, bool value)
         {
-            _boolStack[address.Index] = value;
+            _stack.Bool(address.Index) = value;
         }
 
         private void SetString(Address address, string value)
         {
-            _stringStack[address.Index] = value;
+            _stack.String(address.Index) = value;
         }
 
         private void SetObject(Address address, GorgeObject value)
         {
-            _objectStack[address.Index] = value;
+            _stack.Object(address.Index) = value;
         }
     }
 }
