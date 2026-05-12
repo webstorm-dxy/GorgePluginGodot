@@ -59,15 +59,22 @@ function Write-Info {
 
 # Run an external command safely: git/dotnet/cargo write progress to stderr,
 # which would trigger fatal errors if $ErrorActionPreference were "Stop".
+# Also handles CommandNotFoundException gracefully for optional tools.
 # Returns stdout as string; sets $script:NativeExitCode to the command's exit code.
 function Invoke-Native {
     param([ScriptBlock]$ScriptBlock)
     $prevEAP = $ErrorActionPreference
     $ErrorActionPreference = "Continue"
     try {
-        $result = & $ScriptBlock 2>&1 | Out-String
-        $script:NativeExitCode = $LASTEXITCODE
-        return $result.TrimEnd()
+        try {
+            $result = & $ScriptBlock 2>&1 | Out-String
+            $script:NativeExitCode = $LASTEXITCODE
+            return $result.TrimEnd()
+        } catch {
+            # CommandNotFoundException and other terminating errors
+            $script:NativeExitCode = 127
+            return $_.Exception.Message
+        }
     } finally {
         $ErrorActionPreference = $prevEAP
     }

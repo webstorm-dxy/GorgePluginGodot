@@ -66,7 +66,7 @@ TOTAL_PHASES=9
 phase 1 "Checking toolchain"
 
 check_cmd git "Install git: https://git-scm.com/downloads"
-GIT_VERSION=$(git --version | grep -oP '\d+\.\d+' | head -1)
+GIT_VERSION=$(git --version | awk '{print $3}')
 ok "git $GIT_VERSION"
 
 check_cmd dotnet ".NET SDK is required for the C# plugin. Install: https://dotnet.microsoft.com/download"
@@ -78,7 +78,7 @@ fi
 ok "dotnet $DOTNET_VERSION"
 
 if command -v cargo &>/dev/null; then
-    CARGO_VERSION=$(cargo --version | grep -oP '\d+\.\d+\.\d+' | head -1)
+    CARGO_VERSION=$(cargo --version | awk '{print $2}')
     ok "cargo $CARGO_VERSION"
     HAS_CARGO=true
 else
@@ -319,11 +319,11 @@ if grep -q '^\[editor_plugins\]' "$GODOT_FILE"; then
             EXISTING=$(echo "$ENABLED_LINE" | sed 's/enabled=PackedStringArray(//;s/)//')
             ALL_PARTS=()
             while IFS= read -r part; do
-                part=$(echo "$part" | xargs | sed 's/,$//')
+                part=$(echo "$part" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
                 if [ -n "$part" ]; then
                     ALL_PARTS+=("$part")
                 fi
-            done < <(echo "$EXISTING" | grep -oP '"[^"]*"')
+            done < <(echo "$EXISTING" | tr ',' '\n')
 
             ALL_PARTS+=("\"$PLUGIN_GORGE\"")
             NEW_ENABLED="enabled=PackedStringArray($(IFS=,; echo "${ALL_PARTS[*]}"))"

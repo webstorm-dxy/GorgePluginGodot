@@ -7,7 +7,9 @@
       "mcp__godot-mcp__add_node",
       "mcp__godot-mcp__move_node",
       "mcp__godot-mcp__set_node_properties",
-      "mcp__godot-mcp__get_project_settings"
+      "mcp__godot-mcp__get_project_settings",
+      "Bash(/c/Windows/System32/cmd.exe)",
+      "Bash(/c/Windows/System32/cmd.exe /c \"start /wait C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe -NoProfile -NoExit -ExecutionPolicy Bypass -File C:\\\\Users\\\\daxingyi\\\\RiderProjects\\\\GorgePluginGodot\\\\install.ps1 -ProjectPath C:\\\\Users\\\\daxingyi\\\\Documents\\\\DremuCommunity\")"
     ]
   }
 }
