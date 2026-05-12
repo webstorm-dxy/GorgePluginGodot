@@ -246,6 +246,15 @@ else
     info "EnableDynamicLoading already present"
 fi
 
+# AllowUnsafeBlocks
+if ! csproj_has "<AllowUnsafeBlocks>true</AllowUnsafeBlocks>"; then
+    csproj_add_after "<PropertyGroup>" "    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>"
+    ok "Added AllowUnsafeBlocks"
+    CHANGED_CSPROJ=true
+else
+    info "AllowUnsafeBlocks already present"
+fi
+
 # TargetFramework (check PropertyGroup area)
 if ! csproj_has "<TargetFramework>net8.0</TargetFramework>" && ! csproj_has "<TargetFramework>net9.0</TargetFramework>"; then
     csproj_add_after "<PropertyGroup>" "    <TargetFramework>net8.0</TargetFramework>"
@@ -361,13 +370,23 @@ if [ ! -d "$RUST_DIR" ]; then
     skip "Rust addon directory not found, skipping build"
 elif [ "$HAS_CARGO" = false ]; then
     skip "cargo not installed, skipping Rust build"
-    info "  Build manually: cd addons/nine_slice_sprite_2d_godot2d && cargo build --release"
+    info "  Build manually: cd addons/nine_slice_sprite_2d_godot2d && cargo build && cargo build --release"
 else
     cd "$RUST_DIR"
-    if cargo build --release 2>&1; then
-        ok "Rust extension built successfully"
+    BUILD_OK=true
 
-        # Detect platform extension
+    info "Building debug..."
+    if cargo build 2>&1; then
+        ok "Rust debug build succeeded"
+    else
+        warn "Rust debug build failed"
+        BUILD_OK=false
+    fi
+
+    info "Building release..."
+    if cargo build --release 2>&1; then
+        ok "Rust release build succeeded"
+
         case "$(uname -s)" in
             Linux)   LIB="target/release/libnine_slice_sprite_2d.so" ;;
             Darwin)  LIB="target/release/libnine_slice_sprite_2d.dylib" ;;
@@ -378,7 +397,12 @@ else
             ok "Output: $RUST_DIR/$LIB"
         fi
     else
-        warn "Rust build failed. Build manually: cd $RUST_DIR && cargo build --release"
+        warn "Rust release build failed"
+        BUILD_OK=false
+    fi
+
+    if [ "$BUILD_OK" = false ]; then
+        warn "Some Rust builds failed. Build manually: cd $RUST_DIR && cargo build && cargo build --release"
     fi
     cd "$PROJECT_DIR"
 fi

@@ -313,6 +313,24 @@ if ($edl -ne "true") {
     Write-Info "EnableDynamicLoading already present"
 }
 
+# AllowUnsafeBlocks
+$aus = $pg.AllowUnsafeBlocks
+if ($aus -ne "true") {
+    if ($aus) {
+        Write-Warn "AllowUnsafeBlocks is '$aus', expected 'true'"
+    } else {
+        $el = $csproj.CreateElement("AllowUnsafeBlocks")
+        $el.InnerText = "true"
+        $comment = $csproj.CreateComment($Marker)
+        $pg.AppendChild($comment) | Out-Null
+        $pg.AppendChild($el) | Out-Null
+        Write-Ok "Added AllowUnsafeBlocks"
+        $changedCsproj = $true
+    }
+} else {
+    Write-Info "AllowUnsafeBlocks already present"
+}
+
 # TargetFramework
 $tf = $pg.TargetFramework
 if (-not $tf) {
@@ -451,15 +469,26 @@ if (-not (Test-Path $rustDir)) {
     Write-Skip "Rust addon directory not found, skipping build"
 } elseif (-not $hasCargo) {
     Write-Skip "cargo not installed, skipping Rust build"
-    Write-Info "  Build manually: cd addons/nine_slice_sprite_2d_godot2d && cargo build --release"
+    Write-Info "  Build manually: cd addons/nine_slice_sprite_2d_godot2d && cargo build && cargo build --release"
 } else {
     Push-Location $rustDir
     try {
+        $buildOk = $true
+
+        Write-Info "Building debug..."
+        $null = Invoke-Native { cargo build }
+        if ($script:NativeExitCode -eq 0) {
+            Write-Ok "Rust debug build succeeded"
+        } else {
+            Write-Warn "Rust debug build failed"
+            $buildOk = $false
+        }
+
+        Write-Info "Building release..."
         $null = Invoke-Native { cargo build --release }
         if ($script:NativeExitCode -eq 0) {
-            Write-Ok "Rust extension built successfully"
+            Write-Ok "Rust release build succeeded"
 
-            # Detect platform library
             if ($IsLinux) {
                 $libPath = "target/release/libnine_slice_sprite_2d.so"
             } elseif ($IsMacOS) {
@@ -471,7 +500,12 @@ if (-not (Test-Path $rustDir)) {
                 Write-Ok "Output: $rustDir/$libPath"
             }
         } else {
-            Write-Warn "Rust build failed. Build manually: cd $rustDir && cargo build --release"
+            Write-Warn "Rust release build failed"
+            $buildOk = $false
+        }
+
+        if (-not $buildOk) {
+            Write-Warn "Some Rust builds failed. Build manually: cd $rustDir && cargo build && cargo build --release"
         }
     } finally {
         Pop-Location
