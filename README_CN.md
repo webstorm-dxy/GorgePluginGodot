@@ -38,7 +38,7 @@ irm https://raw.githubusercontent.com/webstorm-dxy/GorgePluginGodot/main/install
 1. 检查工具链（git、.NET SDK、Rust/Cargo、Godot .NET 版本）
 2. 下载框架 addons（稀疏克隆，不下载大文件）
 3. 将 NuGet 依赖合并到你的 `.csproj`
-4. 配置 `project.godot`（启用插件、添加 autoload）
+4. 配置 `project.godot`（启用 gorgeplugin）
 5. 构建 Rust GDExtension（如果已安装 cargo）
 6. 还原 NuGet 包
 

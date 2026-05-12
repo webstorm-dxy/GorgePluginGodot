@@ -173,7 +173,7 @@ phase 4 "Copying addons and demo to project"
 mkdir -p "$PROJECT_DIR/addons"
 
 COPY_COUNT=0
-for addon in gorgeplugin godot_mcp nine_slice_sprite_2d_godot2d; do
+for addon in gorgeplugin nine_slice_sprite_2d_godot2d; do
     SRC="$TMP_DIR/repo/addons/$addon"
     DST="$PROJECT_DIR/addons/$addon"
     if [ -d "$SRC" ]; then
@@ -306,8 +306,7 @@ godot_has() {
     grep -qF "$1" "$GODOT_FILE" 2>/dev/null
 }
 
-# Enable editor plugins
-PLUGIN_MCP="res://addons/godot_mcp/plugin.cfg"
+# Enable the gorgeplugin editor plugin
 PLUGIN_GORGE="res://addons/gorgeplugin/plugin.cfg"
 
 if grep -q '^\[editor_plugins\]' "$GODOT_FILE"; then
@@ -315,19 +314,10 @@ if grep -q '^\[editor_plugins\]' "$GODOT_FILE"; then
     ENABLED_LINE=$(grep '^enabled=' "$GODOT_FILE" || true)
 
     if [ -n "$ENABLED_LINE" ]; then
-        MISSING=()
-        if ! echo "$ENABLED_LINE" | grep -qF "$PLUGIN_MCP"; then
-            MISSING+=("$PLUGIN_MCP")
-        fi
         if ! echo "$ENABLED_LINE" | grep -qF "$PLUGIN_GORGE"; then
-            MISSING+=("$PLUGIN_GORGE")
-        fi
-
-        if [ ${#MISSING[@]} -gt 0 ]; then
-            # Extract existing plugins, add missing ones
+            # Extract existing plugins, add gorgeplugin
             EXISTING=$(echo "$ENABLED_LINE" | sed 's/enabled=PackedStringArray(//;s/)//')
             ALL_PARTS=()
-            # Parse existing quoted strings
             while IFS= read -r part; do
                 part=$(echo "$part" | xargs | sed 's/,$//')
                 if [ -n "$part" ]; then
@@ -335,55 +325,26 @@ if grep -q '^\[editor_plugins\]' "$GODOT_FILE"; then
                 fi
             done < <(echo "$EXISTING" | grep -oP '"[^"]*"')
 
-            for m in "${MISSING[@]}"; do
-                ALL_PARTS+=("\"$m\"")
-            done
-
-            # Rebuild the line
+            ALL_PARTS+=("\"$PLUGIN_GORGE\"")
             NEW_ENABLED="enabled=PackedStringArray($(IFS=,; echo "${ALL_PARTS[*]}"))"
-            # Replace the existing enabled= line
             sed_inplace "s|^enabled=.*|$NEW_ENABLED|" "$GODOT_FILE"
-            ok "Added missing plugins: ${MISSING[*]}"
+            ok "Added gorgeplugin to editor_plugins"
             CHANGED_GODOT=true
         else
-            info "Both plugins already enabled"
+            info "gorgeplugin already enabled"
         fi
     else
-        # No enabled= line, add one
-        sed_inplace "/^\[editor_plugins\]/a\enabled=PackedStringArray(\"$PLUGIN_MCP\", \"$PLUGIN_GORGE\")" "$GODOT_FILE"
+        sed_inplace "/^\[editor_plugins\]/a\enabled=PackedStringArray(\"$PLUGIN_GORGE\")" "$GODOT_FILE"
         ok "Added editor_plugins enabled line"
         CHANGED_GODOT=true
     fi
 else
-    # No editor_plugins section, append
     {
         echo ""
         echo "[editor_plugins]"
-        echo "enabled=PackedStringArray(\"$PLUGIN_GORGE\", \"$PLUGIN_MCP\")"
+        echo "enabled=PackedStringArray(\"$PLUGIN_GORGE\")"
     } >> "$GODOT_FILE"
     ok "Added editor_plugins section"
-    CHANGED_GODOT=true
-fi
-
-# Add MCPRuntime autoload (using path-based reference, not UID)
-AUTOLOAD_KEY="MCPRuntime"
-AUTOLOAD_PATH="*res://addons/godot_mcp/runtime/mcp_runtime.gd"
-
-if grep -q '^\[autoload\]' "$GODOT_FILE"; then
-    if godot_has "$AUTOLOAD_KEY="; then
-        info "MCPRuntime autoload already present"
-    else
-        sed_inplace "/^\[autoload\]/a\\${AUTOLOAD_KEY}=\"${AUTOLOAD_PATH}\"" "$GODOT_FILE"
-        ok "Added MCPRuntime autoload"
-        CHANGED_GODOT=true
-    fi
-else
-    {
-        echo ""
-        echo "[autoload]"
-        echo "${AUTOLOAD_KEY}=\"${AUTOLOAD_PATH}\""
-    } >> "$GODOT_FILE"
-    ok "Added autoload section with MCPRuntime"
     CHANGED_GODOT=true
 fi
 
@@ -441,11 +402,10 @@ echo -e "${BOLD} GorgePluginGodot Installation Complete!${NC}"
 echo -e "${BOLD}========================================${NC}"
 echo ""
 echo -e "  ${GREEN}[x]${NC} addons/gorgeplugin/               - Gorge chart player (C#)"
-echo -e "  ${GREEN}[x]${NC} addons/godot_mcp/                 - AI-assisted editing (GDScript)"
 echo -e "  ${GREEN}[x]${NC} addons/nine_slice_sprite_2d_godot2d/ - Nine-slice GDExtension"
 echo -e "  ${GREEN}[x]${NC} demo/                             - Example demo scene"
 echo -e "  ${GREEN}[x]${NC} NuGet packages added              - Antlr4, Newtonsoft.Json, QuikGraph, SharpZipLib"
-echo -e "  ${GREEN}[x]${NC} project.godot configured          - Plugins enabled, MCPRuntime autoload"
+echo -e "  ${GREEN}[x]${NC} project.godot configured          - gorgeplugin enabled"
 if [ "$HAS_CARGO" = true ] && [ -d "$RUST_DIR" ]; then
     echo -e "  ${GREEN}[x]${NC} Rust GDExtension built           - NineSliceSprite2D ready"
 else

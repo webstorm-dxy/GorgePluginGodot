@@ -38,7 +38,7 @@ The installer will:
 1. Check your toolchain (git, .NET SDK, Rust/Cargo, Godot .NET edition)
 2. Download the framework addons (sparse clone, no large files)
 3. Merge NuGet dependencies into your `.csproj`
-4. Configure `project.godot` (enable plugins, add autoload)
+4. Configure `project.godot` (enable gorgeplugin)
 5. Build the Rust GDExtension (if cargo is installed)
 6. Restore NuGet packages
 

@@ -226,7 +226,7 @@ function Copy-NoClobber {
 }
 
 $copyCount = 0
-$addons = @("gorgeplugin", "godot_mcp", "nine_slice_sprite_2d_godot2d")
+$addons = @("gorgeplugin", "nine_slice_sprite_2d_godot2d")
 foreach ($addon in $addons) {
     $src = Join-Path $repoDir "addons/$addon"
     $dst = Join-Path $addonsDir $addon
@@ -360,14 +360,12 @@ if ($changedCsproj) {
 Write-Phase 6 "Configuring project.godot"
 
 $godotFile = Join-Path $ProjectPath "project.godot"
-$godotContent = Get-Content $godotFile -Raw
 $godotLines = [System.Collections.ArrayList]@(Get-Content $godotFile)
 $changedGodot = $false
 
-$pluginMcp   = "res://addons/godot_mcp/plugin.cfg"
+# ---- editor_plugins (gorgeplugin only) ----
 $pluginGorge = "res://addons/gorgeplugin/plugin.cfg"
 
-# ---- editor_plugins ----
 $editorPluginsIdx = -1
 for ($i = 0; $i -lt $godotLines.Count; $i++) {
     if ($godotLines[$i] -match '^\[editor_plugins\]') {
@@ -389,75 +387,31 @@ if ($editorPluginsIdx -ge 0) {
 
     if ($enabledIdx -ge 0) {
         $enabledLine = $godotLines[$enabledIdx]
-        $missing = @()
-        if ($enabledLine -notmatch [regex]::Escape($pluginMcp)) { $missing += $pluginMcp }
-        if ($enabledLine -notmatch [regex]::Escape($pluginGorge)) { $missing += $pluginGorge }
-
-        if ($missing.Count -gt 0) {
-            # Extract existing plugins from PackedStringArray(...)
+        if ($enabledLine -notmatch [regex]::Escape($pluginGorge)) {
             $existing = @()
             if ($enabledLine -match 'PackedStringArray\((.+)\)') {
                 $inner = $Matches[1]
-                # Extract all quoted strings
                 $matches_r = [regex]::Matches($inner, '"([^"]*)"')
                 foreach ($m in $matches_r) { $existing += $m.Groups[1].Value }
             }
-            $all = $existing + $missing
+            $all = $existing + @($pluginGorge)
             $quoted = ($all | ForEach-Object { "`"$_`"" }) -join ", "
             $godotLines[$enabledIdx] = "enabled=PackedStringArray($quoted)"
-            Write-Ok "Added missing plugins: $($missing -join ', ')"
+            Write-Ok "Added gorgeplugin to editor_plugins"
             $changedGodot = $true
         } else {
-            Write-Info "Both plugins already enabled"
+            Write-Info "gorgeplugin already enabled"
         }
     } else {
-        # No enabled= line, insert one after [editor_plugins]
-        $godotLines.Insert($editorPluginsIdx + 1, "enabled=PackedStringArray(`"$pluginGorge`", `"$pluginMcp`")")
+        $godotLines.Insert($editorPluginsIdx + 1, "enabled=PackedStringArray(`"$pluginGorge`")")
         Write-Ok "Added editor_plugins enabled line"
         $changedGodot = $true
     }
 } else {
-    # Append section
     $godotLines.Add("") | Out-Null
     $godotLines.Add("[editor_plugins]") | Out-Null
-    $godotLines.Add("enabled=PackedStringArray(`"$pluginGorge`", `"$pluginMcp`")") | Out-Null
+    $godotLines.Add("enabled=PackedStringArray(`"$pluginGorge`")") | Out-Null
     Write-Ok "Added editor_plugins section"
-    $changedGodot = $true
-}
-
-# ---- autoload ----
-$autoloadIdx = -1
-for ($i = 0; $i -lt $godotLines.Count; $i++) {
-    if ($godotLines[$i] -match '^\[autoload\]') {
-        $autoloadIdx = $i
-        break
-    }
-}
-
-$autoloadKey = "MCPRuntime"
-$autoloadVal = "*res://addons/godot_mcp/runtime/mcp_runtime.gd"
-
-if ($autoloadIdx -ge 0) {
-    $hasMcpRuntime = $false
-    for ($i = $autoloadIdx + 1; $i -lt $godotLines.Count; $i++) {
-        if ($godotLines[$i] -match "^$autoloadKey=") {
-            $hasMcpRuntime = $true
-            break
-        }
-        if ($godotLines[$i] -match '^\[') { break }
-    }
-    if (-not $hasMcpRuntime) {
-        $godotLines.Insert($autoloadIdx + 1, "$autoloadKey=`"$autoloadVal`"")
-        Write-Ok "Added MCPRuntime autoload"
-        $changedGodot = $true
-    } else {
-        Write-Info "MCPRuntime autoload already present"
-    }
-} else {
-    $godotLines.Add("") | Out-Null
-    $godotLines.Add("[autoload]") | Out-Null
-    $godotLines.Add("$autoloadKey=`"$autoloadVal`"") | Out-Null
-    Write-Ok "Added autoload section with MCPRuntime"
     $changedGodot = $true
 }
 
@@ -533,11 +487,10 @@ Write-Host " GorgePluginGodot Installation Complete!" -ForegroundColor White
 Write-Host "========================================"  -ForegroundColor White
 Write-Host ""
 Write-Host "  [x] addons/gorgeplugin/                 - Gorge chart player (C#)"       -ForegroundColor Green
-Write-Host "  [x] addons/godot_mcp/                   - AI-assisted editing (GDScript)" -ForegroundColor Green
 Write-Host "  [x] addons/nine_slice_sprite_2d_godot2d/ - Nine-slice GDExtension"        -ForegroundColor Green
 Write-Host "  [x] demo/                               - Example demo scene"              -ForegroundColor Green
 Write-Host "  [x] NuGet packages added                - Antlr4, Newtonsoft.Json, QuikGraph, SharpZipLib" -ForegroundColor Green
-Write-Host "  [x] project.godot configured            - Plugins enabled, MCPRuntime autoload" -ForegroundColor Green
+Write-Host "  [x] project.godot configured            - gorgeplugin enabled" -ForegroundColor Green
 if ($hasCargo -and (Test-Path $rustDir)) {
     Write-Host "  [x] Rust GDExtension built             - NineSliceSprite2D ready"      -ForegroundColor Green
 } else {
