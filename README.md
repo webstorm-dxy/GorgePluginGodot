@@ -20,11 +20,44 @@ The plugin consists of three addons:
 
 ## Installation
 
-### 1. Copy the addons folder
+### Quick Install (Recommended)
+
+From your Godot .NET project's root directory, run a single command:
+
+**Linux / macOS / WSL / Git Bash:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/webstorm-dxy/GorgePluginGodot/main/install.sh | bash
+```
+
+**Windows PowerShell:**
+```powershell
+irm https://raw.githubusercontent.com/webstorm-dxy/GorgePluginGodot/main/install.ps1 | iex
+```
+
+The installer will:
+1. Check your toolchain (git, .NET SDK, Rust/Cargo, Godot .NET edition)
+2. Download the framework addons (sparse clone, no large files)
+3. Merge NuGet dependencies into your `.csproj`
+4. Configure `project.godot` (enable plugins, add autoload)
+5. Build the Rust GDExtension (if cargo is installed)
+6. Restore NuGet packages
+
+> **Security note**: Always inspect scripts before piping to bash/iex. You can download first:
+> ```bash
+> curl -fsSL https://raw.githubusercontent.com/webstorm-dxy/GorgePluginGodot/main/install.sh -o install.sh
+> less install.sh
+> bash install.sh
+> ```
+
+The installer is **idempotent** — running it multiple times is safe and won't duplicate entries.
+
+### Manual Installation
+
+#### 1. Copy the addons folder
 
 Copy the `addons/` folder into your Godot project's `res://` directory.
 
-### 2. Configure C# project dependencies
+#### 2. Configure C# project dependencies
 
 Add the following NuGet dependencies to your `.csproj` file (**version numbers must match** or GorgePlugin may not work correctly):
 
@@ -49,7 +82,7 @@ Add the following NuGet dependencies to your `.csproj` file (**version numbers m
 > - If your existing project has **different versions** of these packages, they may conflict with the Gorge framework DLLs referenced internally by GorgePlugin, causing `MissingMethodException` or `FileLoadException`. **Keep the versions consistent, or use assembly binding redirects**
 > - For Android builds, add `<TargetFramework Condition=" '$(GodotTargetPlatform)' == 'android' ">net9.0</TargetFramework>`
 
-### 3. Enable plugins and build
+#### 3. Enable plugins and build
 
 In Godot, go to **Project → Project Settings → Plugins** and enable both:
 - **GorgePlugin** — adds the `GamePlayer` custom node type
@@ -57,7 +90,7 @@ In Godot, go to **Project → Project Settings → Plugins** and enable both:
 
 Build the C# solution: open the solution in your IDE, or run `dotnet build`.
 
-### 4. (Optional) Build the Rust nine-slice extension
+#### 4. (Optional) Build the Rust nine-slice extension
 
 ```bash
 cd addons/nine_slice_sprite_2d_godot2d

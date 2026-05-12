@@ -19,7 +19,6 @@ script = ExtResource("1_1vxv8")
 [node name="GamePlayer" type="Node" parent="." unique_id=360816546]
 script = ExtResource("2_bcyoi")
 GorgeAutoPlay = false
-EnableMouseInput = true
 
 [node name="Panel" type="VBoxContainer" parent="." unique_id=2145932767]
 layout_mode = 1

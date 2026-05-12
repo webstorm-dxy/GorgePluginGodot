@@ -20,11 +20,44 @@
 
 ## 安装
 
-### 1. 复制 addons 目录
+### 快速安装（推荐）
+
+在你的 Godot .NET 项目根目录下，执行一行命令即可完成安装：
+
+**Linux / macOS / WSL / Git Bash：**
+```bash
+curl -fsSL https://raw.githubusercontent.com/webstorm-dxy/GorgePluginGodot/main/install.sh | bash
+```
+
+**Windows PowerShell：**
+```powershell
+irm https://raw.githubusercontent.com/webstorm-dxy/GorgePluginGodot/main/install.ps1 | iex
+```
+
+安装脚本会自动完成以下操作：
+1. 检查工具链（git、.NET SDK、Rust/Cargo、Godot .NET 版本）
+2. 下载框架 addons（稀疏克隆，不下载大文件）
+3. 将 NuGet 依赖合并到你的 `.csproj`
+4. 配置 `project.godot`（启用插件、添加 autoload）
+5. 构建 Rust GDExtension（如果已安装 cargo）
+6. 还原 NuGet 包
+
+> **安全提示**：在通过管道执行脚本之前，建议先下载并检查内容：
+> ```bash
+> curl -fsSL https://raw.githubusercontent.com/webstorm-dxy/GorgePluginGodot/main/install.sh -o install.sh
+> less install.sh
+> bash install.sh
+> ```
+
+安装脚本是**幂等**的——多次运行不会产生重复条目。
+
+### 手动安装
+
+#### 1. 复制 addons 目录
 
 将 `addons/` 目录复制到你 Godot 项目的 `res://` 目录下。
 
-### 2. 配置 C# 项目依赖
+#### 2. 配置 C# 项目依赖
 
 在你的 `.csproj` 文件中添加以下 NuGet 依赖（**注意版本号必须匹配**，否则 GorgePlugin 可能无法正常工作）：
 
@@ -50,7 +83,7 @@
 > - 如果你现有的项目已有上述包的**不同版本**，可能与 GorgePlugin 内部引用的 Gorge 框架 DLL 产生冲突，导致 `MissingMethodException` 或 `FileLoadException`。**建议保持版本一致，或使用 assembly binding redirect**
 > - 如果你的项目目标平台为 Android，需要额外添加 `<TargetFramework Condition=" '$(GodotTargetPlatform)' == 'android' ">net9.0</TargetFramework>`
 
-### 3. 启用插件并构建
+#### 3. 启用插件并构建
 
 在 Godot 中，前往 **项目 → 项目设置 → 插件**，启用：
 - **GorgePlugin** — 添加 `GamePlayer` 自定义节点类型
@@ -58,7 +91,7 @@
 
 构建 C# 解决方案：在 IDE 中打开解决方案，或在终端执行 `dotnet build`。
 
-### 4. 构建 Rust 九宫格扩展
+#### 4. 构建 Rust 九宫格扩展
 
 ```bash
 cd addons/nine_slice_sprite_2d_godot2d
