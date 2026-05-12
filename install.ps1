@@ -10,7 +10,6 @@ param(
     [string]$ProjectPath = ""
 )
 
-$ErrorActionPreference = "Stop"
 $RepoUrl = "https://github.com/webstorm-dxy/GorgePluginGodot.git"
 $RequiredDotnetMajor = 8
 $Marker = "GorgePlugin: added by installer"
@@ -58,6 +57,22 @@ function Write-Info {
     Write-Host "  $Text"
 }
 
+# Run an external command safely: git/dotnet/cargo write progress to stderr,
+# which would trigger fatal errors if $ErrorActionPreference were "Stop".
+# Returns stdout as string; sets $script:NativeExitCode to the command's exit code.
+function Invoke-Native {
+    param([ScriptBlock]$ScriptBlock)
+    $prevEAP = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try {
+        $result = & $ScriptBlock 2>&1 | Out-String
+        $script:NativeExitCode = $LASTEXITCODE
+        return $result.TrimEnd()
+    } finally {
+        $ErrorActionPreference = $prevEAP
+    }
+}
+
 # ---- Header ----
 Write-Host "GorgePluginGodot Installer" -ForegroundColor White
 Write-Host "Target repo: $RepoUrl"
@@ -70,47 +85,40 @@ $TotalPhases = 9
 # ==========================================
 Write-Phase 1 "Checking toolchain"
 
-try {
-    $gitVersion = (git --version 2>$null) -replace 'git version ', ''
-    if (-not $gitVersion) { Write-Fail "git is not installed. Install from: https://git-scm.com/downloads" }
-    Write-Ok "git $gitVersion"
-} catch {
+$gitOutput = Invoke-Native { git --version }
+if ($script:NativeExitCode -ne 0 -or -not $gitOutput) {
     Write-Fail "git is not installed. Install from: https://git-scm.com/downloads"
 }
+$gitVersion = $gitOutput -replace 'git version ', ''
+Write-Ok "git $gitVersion"
 
-try {
-    $dotnetVersion = dotnet --version 2>$null
-    if (-not $dotnetVersion) { Write-Fail ".NET SDK is required. Install from: https://dotnet.microsoft.com/download" }
-    $dotnetMajor = [int]($dotnetVersion.Split('.')[0])
-    if ($dotnetMajor -lt $RequiredDotnetMajor) {
-        Write-Fail ".NET SDK $RequiredDotnetMajor.0+ is required. Found: $dotnetVersion"
-    }
-    Write-Ok "dotnet $dotnetVersion"
-} catch {
+$dotnetOutput = Invoke-Native { dotnet --version }
+if ($script:NativeExitCode -ne 0 -or -not $dotnetOutput) {
     Write-Fail ".NET SDK is required. Install from: https://dotnet.microsoft.com/download"
 }
+$dotnetVersion = $dotnetOutput.Trim()
+$dotnetMajor = [int]($dotnetVersion.Split('.')[0])
+if ($dotnetMajor -lt $RequiredDotnetMajor) {
+    Write-Fail ".NET SDK $RequiredDotnetMajor.0+ is required. Found: $dotnetVersion"
+}
+Write-Ok "dotnet $dotnetVersion"
 
 $hasCargo = $false
-try {
-    $cargoVersion = (cargo --version 2>$null) -replace 'cargo ', ''
-    if ($cargoVersion) {
-        Write-Ok "cargo $cargoVersion"
-        $hasCargo = $true
-    } else {
-        Write-Warn "cargo not found. Rust GDExtension (NineSliceSprite2D) will not be built."
-    }
-} catch {
+$cargoOutput = Invoke-Native { cargo --version }
+if ($script:NativeExitCode -eq 0 -and $cargoOutput) {
+    $cargoVersion = $cargoOutput -replace 'cargo ', ''
+    Write-Ok "cargo $cargoVersion"
+    $hasCargo = $true
+} else {
     Write-Warn "cargo not found. Rust GDExtension (NineSliceSprite2D) will not be built."
 }
 
-try {
-    $godotVer = godot --version --headless 2>$null
-    if ($godotVer -match "mono|\.net|\.NET") {
-        Write-Ok "Godot .NET edition detected"
-    } else {
-        Write-Warn "Godot found but could not verify .NET edition. Make sure you use the .NET variant."
-    }
-} catch {
+$godotOutput = Invoke-Native { godot --version --headless }
+if ($script:NativeExitCode -eq 0 -and $godotOutput -match "mono|\.net|\.NET") {
+    Write-Ok "Godot .NET edition detected"
+} elseif ($script:NativeExitCode -eq 0) {
+    Write-Warn "Godot found but could not verify .NET edition. Make sure you use the .NET variant."
+} else {
     Write-Warn "godot command not found in PATH. Cannot verify .NET edition."
 }
 
@@ -152,14 +160,17 @@ New-Item -ItemType Directory -Path $tmpDir -Force | Out-Null
 $repoDir = Join-Path $tmpDir "repo"
 
 Write-Info "Cloning (sparse, shallow)..."
-$cloneResult = git clone --filter=blob:none --sparse --depth=1 $RepoUrl $repoDir 2>&1
-if ($LASTEXITCODE -ne 0 -or -not (Test-Path $repoDir)) {
-    Write-Fail "Failed to clone repository: $cloneResult"
+$null = Invoke-Native { git clone --filter=blob:none --sparse --depth=1 $RepoUrl $repoDir }
+if ($script:NativeExitCode -ne 0 -or -not (Test-Path $repoDir)) {
+    Write-Fail "Failed to clone repository."
 }
 
 Push-Location $repoDir
 try {
-    git sparse-checkout set addons/ demo/ 2>&1 | Out-Null
+    $null = Invoke-Native { git sparse-checkout set addons/ demo/ }
+    if ($script:NativeExitCode -ne 0) {
+        Write-Fail "Failed to sparse-checkout addons/ and demo/."
+    }
     Write-Ok "Downloaded addons/ and demo/"
 } finally {
     Pop-Location
@@ -172,21 +183,22 @@ if (Test-Path $nativeZip) {
     $headerStr = [System.Text.Encoding]::ASCII.GetString($header)
     if ($headerStr -match "git-lfs") {
         Write-Info "Native.zip is an LFS pointer. Resolving..."
+        Push-Location $repoDir
         try {
-            Push-Location $repoDir
-            git lfs pull --include="addons/gorgeplugin/Native.zip" 2>&1 | Out-Null
-            Pop-Location
-            # Verify: ZIP files start with PK
-            $header2 = [System.IO.File]::ReadAllBytes($nativeZip)[0..3]
-            if ($header2[0] -eq 0x50 -and $header2[1] -eq 0x4B) {
-                Write-Ok "Native.zip resolved (valid ZIP)"
+            $null = Invoke-Native { git lfs pull --include="addons/gorgeplugin/Native.zip" }
+            if ($script:NativeExitCode -eq 0) {
+                $header2 = [System.IO.File]::ReadAllBytes($nativeZip)[0..3]
+                if ($header2[0] -eq 0x50 -and $header2[1] -eq 0x4B) {
+                    Write-Ok "Native.zip resolved (valid ZIP)"
+                } else {
+                    Write-Warn "Native.zip still appears to be an LFS pointer after pull."
+                }
             } else {
-                Write-Warn "Native.zip still appears to be an LFS pointer after pull."
+                Write-Warn "git-lfs pull failed. Native.zip is an LFS pointer stub."
+                Write-Warn "Download manually from: https://github.com/webstorm-dxy/GorgePluginGodot/releases"
             }
-        } catch {
-            Pop-Location -ErrorAction SilentlyContinue
-            Write-Warn "git-lfs not installed. Native.zip is an LFS pointer stub."
-            Write-Warn "Download manually from: https://github.com/webstorm-dxy/GorgePluginGodot/releases"
+        } finally {
+            Pop-Location
         }
     } else {
         Write-Ok "Native.zip is a valid file"
@@ -436,8 +448,8 @@ if (-not (Test-Path $rustDir)) {
 } else {
     Push-Location $rustDir
     try {
-        $buildOutput = cargo build --release 2>&1
-        if ($LASTEXITCODE -eq 0) {
+        $null = Invoke-Native { cargo build --release }
+        if ($script:NativeExitCode -eq 0) {
             Write-Ok "Rust extension built successfully"
 
             # Detect platform library
@@ -466,8 +478,8 @@ Write-Phase 8 "Restoring NuGet packages"
 
 Push-Location $ProjectPath
 try {
-    dotnet restore 2>&1 | Out-Null
-    if ($LASTEXITCODE -eq 0) {
+    $null = Invoke-Native { dotnet restore }
+    if ($script:NativeExitCode -eq 0) {
         Write-Ok "NuGet packages restored"
     } else {
         Write-Warn "dotnet restore failed. Run manually: dotnet restore"
