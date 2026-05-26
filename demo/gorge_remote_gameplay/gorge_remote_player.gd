@@ -164,7 +164,15 @@ func _handle_set_packages_command(payload: Dictionary, source_ip: String, source
 
     player.clear_packages()
 
-    player.add_runtime_package_path(NATIVE_PACKAGE_PATH)
+    # Always ensure Native.zip is included (deduplicate by filename)
+    var native_filename := NATIVE_PACKAGE_PATH.get_file()
+    var has_native := false
+    for path in runtime_paths:
+        if path.get_file() == native_filename:
+            has_native = true
+            break
+    if not has_native:
+        player.add_runtime_package_path(NATIVE_PACKAGE_PATH)
 
     for path in runtime_paths:
         if not player.add_runtime_package_path(path):
@@ -187,7 +195,7 @@ func _handle_set_packages_command(payload: Dictionary, source_ip: String, source
     var response := {
         "type": "set_packages",
         "ok": true,
-        "runtimePackagePaths": [NATIVE_PACKAGE_PATH] + runtime_paths,
+        "runtimePackagePaths": ([NATIVE_PACKAGE_PATH] if not has_native else []) + runtime_paths,
         "chartPackagePaths": chart_paths.duplicate(),
         "durationSeconds": duration,
         "beginSeconds": begin,

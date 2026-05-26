@@ -215,14 +215,16 @@ public partial class GamePlayer : Node, ISimulationDriver
 
             foreach (var path in RuntimePackagePaths)
             {
-                Packages.Add(LoadPackageFromGodotPath(path, false));
-                runtimePackageCount++;
+                var (rpCount, cpCount) = AddPackagesFromPath(path, false);
+                runtimePackageCount += rpCount;
+                chartPackageCount += cpCount;
             }
 
             foreach (var path in ChartPackagePaths)
             {
-                Packages.Add(LoadPackageFromGodotPath(path, true));
-                chartPackageCount++;
+                var (rpCount, cpCount) = AddPackagesFromPath(path, true);
+                runtimePackageCount += rpCount;
+                chartPackageCount += cpCount;
             }
 
             foreach (var package in _manualPackages)
@@ -509,9 +511,9 @@ public partial class GamePlayer : Node, ISimulationDriver
             // Collect packages from configured paths
             var packages = new List<Package>();
             foreach (var path in RuntimePackagePaths)
-                packages.Add(LoadPackageFromGodotPath(path, false));
+                CollectPackagesFromPath(packages, path);
             foreach (var path in ChartPackagePaths)
-                packages.Add(LoadPackageFromGodotPath(path, true));
+                CollectPackagesFromPath(packages, path);
 
             var cachePath = RuntimeManager.CompilePackagesToCache(packages);
             if (cachePath != null)
@@ -741,6 +743,60 @@ public partial class GamePlayer : Node, ISimulationDriver
         }
 
         return Package.LoadZipPackage(file.GetBuffer((long)file.GetLength()), isChart);
+    }
+
+    /// <summary>
+    /// Add packages from a path to the global Packages list and return (runtimeCount, chartCount).
+    /// Handles .gpkg expansion transparently.
+    /// </summary>
+    private (int runtimeCount, int chartCount) AddPackagesFromPath(string path, bool isChart)
+    {
+        if (GpkgLoader.IsGpkgPath(path))
+        {
+            var result = GpkgLoader.LoadGpkg(ReadFileBytes(path));
+            Packages.AddRange(result.RuntimePackages);
+            if (result.ChartPackage != null)
+            {
+                Packages.Add(result.ChartPackage);
+                return (result.RuntimePackages.Count, 1);
+            }
+
+            return (result.RuntimePackages.Count, 0);
+        }
+
+        Packages.Add(LoadPackageFromGodotPath(path, isChart));
+        return isChart ? (0, 1) : (1, 0);
+    }
+
+    /// <summary>
+    /// Collect packages from a path into the provided list (for CompileToBytecode).
+    /// Handles .gpkg expansion transparently.
+    /// </summary>
+    private void CollectPackagesFromPath(List<Package> packages, string path)
+    {
+        if (GpkgLoader.IsGpkgPath(path))
+        {
+            var result = GpkgLoader.LoadGpkg(ReadFileBytes(path));
+            packages.AddRange(result.RuntimePackages);
+            if (result.ChartPackage != null)
+                packages.Add(result.ChartPackage);
+        }
+        else
+        {
+            // isChart doesn't matter for compilation — all source code is compiled together
+            packages.Add(LoadPackageFromGodotPath(path, false));
+        }
+    }
+
+    private static byte[] ReadFileBytes(string path)
+    {
+        using var file = FileAccess.Open(path, FileAccess.ModeFlags.Read);
+        if (file == null)
+        {
+            throw new InvalidOperationException($"Cannot open file: {path}");
+        }
+
+        return file.GetBuffer((long)file.GetLength());
     }
 
     private bool TryValidatePackagePath(string path)

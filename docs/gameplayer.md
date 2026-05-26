@@ -83,7 +83,30 @@ Array of paths to runtime `.zip` package files. At least one runtime package is 
 @export var ChartPackagePaths: Array[String] = []
 ```
 
-Array of paths to chart `.zip` package files. At least one chart package is required to play.
+Array of paths to chart `.zip` package files or `.gpkg` chart bundles. At least one chart package is required to play.
+
+#### .gpkg Support
+
+A `.gpkg` file is a zip archive that bundles both chart source and form (modality) code in a single package. Its internal structure:
+
+```
+song.gpkg
+├── setting.json        # Declares Forms array (e.g. ["Dremu"])
+├── Chart.g             # Chart source files (root level)
+├── ...
+└── Forms/
+    └── Dremu/
+        ├── Dremu.g     # Form/modality runtime files
+        └── ...
+```
+
+When a `.gpkg` is provided as a chart path, `prepare_runtime()` automatically:
+- Extracts `Forms/<formName>/...` as runtime packages (with the `Forms/<formName>/` prefix stripped)
+- Extracts root-level files as the chart package
+
+This means a single `.gpkg` can serve as both chart and runtime source — though the default `Native.zip` runtime is still included as a base.
+
+You can also place a `.gpkg` in `RuntimePackagePaths`; it will contribute both its runtime and chart packages.
 
 ### AutoStartOnReady
 

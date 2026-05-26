@@ -107,7 +107,7 @@ Add a `GamePlayer` node to your scene. It appears as a custom node type in the "
 
 Set the following exported properties on the `GamePlayer` node:
 
-- **ChartPackagePaths** — array of chart `.zip` package paths
+- **ChartPackagePaths** — array of chart `.zip` or `.gpkg` package paths
 - **RuntimePackagePaths** — array of runtime `.zip` package paths (defaults to `res://addons/gorgeplugin/Native.zip`)
 - **AutoStartOnReady** — optionally start playback automatically when the scene loads
 - **TerminateTime** — simulation terminate time in seconds (default: 135.0)
@@ -149,7 +149,7 @@ func _on_player_error(message: String):
 
 Open `demo/game_player_demo.tscn` and press F5. The demo scene provides Play/Stop buttons and a status display. It expects:
 - `res://Dremu.zip` — a runtime package
-- `res://DremuTest.zip` — a chart package
+- `res://DremuTest.zip` — a chart package (`.gpkg` bundles are also supported; see `docs/gameplayer.md`)
 
 ## GamePlayer API Reference
 

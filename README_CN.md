@@ -108,7 +108,7 @@ cargo build --release
 
 在 `GamePlayer` 节点上设置以下导出属性：
 
-- **ChartPackagePaths** — 谱面包 `.zip` 文件路径数组
+- **ChartPackagePaths** — 谱面包 `.zip` 或 `.gpkg` 文件路径数组
 - **RuntimePackagePaths** — 运行包 `.zip` 文件路径数组（默认值为 `res://addons/gorgeplugin/Native.zip`）
 - **AutoStartOnReady** — 可选，场景加载时自动开始播放
 - **TerminateTime** — 模拟终止时间，单位秒（默认：135.0）
@@ -150,7 +150,7 @@ func _on_player_error(message: String):
 
 打开 `demo/game_player_demo.tscn` 并按 F5 运行。演示场景提供播放/停止按钮和状态显示。它需要：
 - `res://Dremu.zip` — 运行包
-- `res://DremuTest.zip` — 谱面包
+- `res://DremuTest.zip` — 谱面包（也支持 `.gpkg` 谱面包，详见 `docs/gameplayer.md`）
 
 ## GamePlayer API 参考
 
