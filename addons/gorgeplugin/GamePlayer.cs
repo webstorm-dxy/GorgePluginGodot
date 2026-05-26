@@ -39,6 +39,15 @@ public partial class GamePlayer : Node, ISimulationDriver
     [Signal]
     public delegate void BytecodeCompileFailedEventHandler(string message);
 
+    [Signal]
+    public delegate void ChartPausedEventHandler();
+
+    [Signal]
+    public delegate void ChartResumedEventHandler();
+
+    [Signal]
+    public delegate void ChartSeekedEventHandler(float seconds);
+
     [Export]
     public Godot.Collections.Array<string> RuntimePackagePaths { get; set; } = new()
     {
@@ -96,6 +105,8 @@ public partial class GamePlayer : Node, ISimulationDriver
     private readonly List<Package> _manualPackages = new();
     private bool _runtimeDirty = true;
     private bool _runtimePrepared;
+    private bool _isPaused;
+    private bool _isChartSessionActive;
     private Node2D _playerRoot;
     private Camera2D _camera;
     private GodotTouchSignalCollector _touchSignalCollector;
@@ -261,6 +272,11 @@ public partial class GamePlayer : Node, ISimulationDriver
     {
         try
         {
+            if (_isPaused)
+            {
+                return ResumeChart();
+            }
+
             if (_runtimeDirty || !_runtimePrepared || RuntimeStatic.Runtime == null)
             {
                 if (!PrepareRuntime())
@@ -282,6 +298,7 @@ public partial class GamePlayer : Node, ISimulationDriver
             RuntimeStatic.Runtime.StartSimulation();
             SetPlaying(true);
             ConfigureAndEnableTouchSignalCollector();
+            _isChartSessionActive = true;
             EmitSignal(SignalName.ChartStarted);
             return true;
         }
@@ -297,9 +314,9 @@ public partial class GamePlayer : Node, ISimulationDriver
     {
         try
         {
-            var wasPlaying = IsPlaying;
+            var wasActive = IsPlaying || _isPaused;
 
-            if (wasPlaying)
+            if (IsPlaying)
             {
                 DisableTouchSignalCollector();
             }
@@ -309,9 +326,11 @@ public partial class GamePlayer : Node, ISimulationDriver
                 RuntimeStatic.Runtime.StopSimulation();
             }
 
+            _isPaused = false;
+            _isChartSessionActive = false;
             SetPlaying(false);
 
-            if (wasPlaying)
+            if (wasActive)
             {
                 EmitSignal(SignalName.ChartStopped, reason);
             }
@@ -330,6 +349,141 @@ public partial class GamePlayer : Node, ISimulationDriver
     {
         StopChart("restart");
         return PlayChart();
+    }
+
+    public bool PauseChart()
+    {
+        try
+        {
+            if (!_isChartSessionActive || _isPaused)
+            {
+                return false;
+            }
+
+            RuntimeStatic.Runtime?.SimulationRuntime?.Audio?.StopAllSong();
+            DisableTouchSignalCollector();
+            SetPlaying(false);
+            _isPaused = true;
+            EmitSignal(SignalName.ChartPaused);
+            return true;
+        }
+        catch (Exception exception)
+        {
+            ReportError($"PauseChart failed: {exception.Message}");
+            return false;
+        }
+    }
+
+    public bool ResumeChart()
+    {
+        try
+        {
+            if (!_isChartSessionActive || !_isPaused)
+            {
+                return false;
+            }
+
+            _isPaused = false;
+            SetPlaying(true);
+            ConfigureAndEnableTouchSignalCollector();
+            EmitSignal(SignalName.ChartResumed);
+            return true;
+        }
+        catch (Exception exception)
+        {
+            ReportError($"ResumeChart failed: {exception.Message}");
+            return false;
+        }
+    }
+
+    public bool SeekChartTime(float seconds, bool pauseFirst = true)
+    {
+        try
+        {
+            if (_runtimeDirty || !_runtimePrepared || RuntimeStatic.Runtime == null)
+            {
+                if (!PrepareRuntime())
+                {
+                    return false;
+                }
+            }
+
+            if (RuntimeStatic.Runtime?.SimulationRuntime?.IsSimulating != true)
+            {
+                RuntimeStatic.Runtime?.StartSimulation();
+                _isChartSessionActive = true;
+            }
+
+            if (IsPlaying && pauseFirst)
+            {
+                PauseChart();
+            }
+
+            var chart = RuntimeStatic.Runtime?.SimulationRuntime?.Chart;
+            if (chart == null)
+            {
+                return false;
+            }
+
+            seconds = Mathf.Clamp(seconds, chart.BeginChartTime, chart.TerminateChartTime);
+            RuntimeStatic.Runtime.SimulationRuntime.Simulation.SimulationMachine.SimulateTo(seconds);
+            RuntimeStatic.Runtime.SimulationRuntime.Audio.StopAllSong();
+
+            if (!IsPlaying)
+            {
+                _syncRealTime = GetRealTimeSeconds();
+                _syncSimulateTime = RuntimeStatic.Runtime?.SimulationRuntime?.Simulation?.SimulationMachine?.SimulateTime ?? seconds;
+            }
+
+            EmitSignal(SignalName.ChartSeeked, seconds);
+            return true;
+        }
+        catch (Exception exception)
+        {
+            ReportError($"SeekChartTime failed: {exception.Message}");
+            return false;
+        }
+    }
+
+    public float GetChartTime()
+    {
+        if (RuntimeStatic.Runtime?.SimulationRuntime?.Simulation?.SimulationMachine == null)
+        {
+            return -1f;
+        }
+
+        return RuntimeStatic.Runtime.SimulationRuntime.Simulation.SimulationMachine.ChartTime;
+    }
+
+    public float GetChartBeginTime()
+    {
+        if (RuntimeStatic.Runtime?.SimulationRuntime?.Chart == null)
+        {
+            return -1f;
+        }
+
+        return RuntimeStatic.Runtime.SimulationRuntime.Chart.BeginChartTime;
+    }
+
+    public float GetChartEndTime()
+    {
+        if (RuntimeStatic.Runtime?.SimulationRuntime?.Chart == null)
+        {
+            return -1f;
+        }
+
+        return RuntimeStatic.Runtime.SimulationRuntime.Chart.TerminateChartTime;
+    }
+
+    public float GetChartDuration()
+    {
+        if (RuntimeStatic.Runtime?.SimulationRuntime?.Chart == null)
+        {
+            return -1f;
+        }
+
+        var chart = RuntimeStatic.Runtime.SimulationRuntime.Chart;
+        return chart.TerminateChartTime - chart.BeginChartTime;
     }
 
     public void RequestPlay()
@@ -438,6 +592,41 @@ public partial class GamePlayer : Node, ISimulationDriver
         RequestStop();
     }
 
+    public bool pause_chart()
+    {
+        return PauseChart();
+    }
+
+    public bool resume_chart()
+    {
+        return ResumeChart();
+    }
+
+    public bool seek_chart_time(float seconds, bool pauseFirst = true)
+    {
+        return SeekChartTime(seconds, pauseFirst);
+    }
+
+    public float get_chart_time()
+    {
+        return GetChartTime();
+    }
+
+    public float get_chart_begin_time()
+    {
+        return GetChartBeginTime();
+    }
+
+    public float get_chart_end_time()
+    {
+        return GetChartEndTime();
+    }
+
+    public float get_chart_duration()
+    {
+        return GetChartDuration();
+    }
+
     private void InitializeRenderRoot()
     {
         Base.Instance = new GodotBase();
@@ -533,6 +722,8 @@ public partial class GamePlayer : Node, ISimulationDriver
 
         RuntimeStatic.Runtime.DestructSimulationRuntime();
         RuntimeStatic.Runtime = null;
+        _isPaused = false;
+        _isChartSessionActive = false;
         SetPlaying(false);
     }
 
@@ -601,6 +792,8 @@ public partial class GamePlayer : Node, ISimulationDriver
             DisableTouchSignalCollector();
         }
 
+        _isPaused = false;
+        _isChartSessionActive = false;
         SetPlaying(false);
         EmitSignal(SignalName.ChartStopped, "terminated");
     }

@@ -3,3 +3,5 @@
 /android/
 addons/nine_slice_sprite_2d_godot2d/target
 expo/
+.idea/
+.deepseek/

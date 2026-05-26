@@ -1,0 +1,17 @@
+[gd_scene format=3 uid="uid://dusiv447qd7jj"]
+
+[ext_resource type="Script" uid="uid://v5tt3uofv6ji" path="res://demo/gorge_remote_gameplay/gorge_remote_player.gd" id="1_aknb8"]
+[ext_resource type="Script" uid="uid://cru3yw4mcjypj" path="res://addons/gorgeplugin/GamePlayer.cs" id="1_wert8"]
+
+[node name="GorgeRemotePlayer" type="Control" unique_id=1489273100]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_aknb8")
+
+[node name="GamePlayer" type="Node" parent="." unique_id=329188716]
+script = ExtResource("1_wert8")
+metadata/_custom_type_script = "uid://cru3yw4mcjypj"
