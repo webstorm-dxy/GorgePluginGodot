@@ -265,7 +265,7 @@ public partial class GamePlayer : Node, ISimulationDriver
         {
             _runtimePrepared = false;
             IsPlaying = false;
-            ReportError($"PrepareRuntime failed: {exception.Message}");
+            ReportError($"PrepareRuntime failed: {exception}");
             return false;
         }
     }

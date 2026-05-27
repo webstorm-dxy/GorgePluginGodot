@@ -126,7 +126,10 @@ namespace Gorge.GorgeCompiler.CompileContext.Scope
 
             if (selectedConstructors.Count == 0)
             {
-                throw new GorgeCompileException("无候选构造方法");
+                var argTypeNames = string.Join(", ", argumentTypes.Select(t => t.ToGorgeType().FullName));
+                var constructorNames = string.Join("; ", Constructors.Keys.Select(c => c.Identifier.ToString()));
+                throw new GorgeCompileException(
+                    $"无候选构造方法 in {ParentScope.ClassSymbol.FullName}: args=({argTypeNames}), available=({constructorNames})");
             }
 
             throw new GorgeCompileException("有多个候选");

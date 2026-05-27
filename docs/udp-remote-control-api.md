@@ -326,7 +326,7 @@ End:         135.000s
 {
   "cmd": "set_packages",
   "runtimePackagePaths": [
-    "/absolute/path/to/runtime1.zip",
+	"/absolute/path/to/runtime1.zip",
     "res://Dremu.zip"
   ],
   "chartPackagePaths": [
@@ -356,7 +356,7 @@ End:         135.000s
     "/absolute/path/to/runtime.zip"
   ],
   "chartPackagePaths": [
-    "/Users/daxingyi/Music/test.gpkg",
+	"/Users/daxingyi/Music/test.gpkg",
     "/absolute/path/to/another_chart.zip"
   ]
 }
@@ -448,7 +448,7 @@ Native.zip + 请求中的 runtime 包
   "type": "set_packages",
   "ok": true,
   "runtimePackagePaths": [
-    "res://addons/gorgeplugin/Native.zip",
+	"res://addons/gorgeplugin/Native.zip",
     "/absolute/path/to/runtime.zip"
   ],
   "chartPackagePaths": [
